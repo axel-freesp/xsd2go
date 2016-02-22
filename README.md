@@ -21,8 +21,11 @@ Xsd2go needs
 On some systems (e.g. Ubuntu 15.04) the stylesheet processor is broken or comes with the wrong version. (I will provide detailed installation notes how to compile and install Xalan correctly on Ubuntu 15.04.)
 
 After cloning the project, cd into it. The following make commands are available:
+
 `$ make` - build all examples and run the tests on them.
+
 `$ make clean` - delete all generated files
+
 `$ make check` - perform explicit schema validation of the test XML files
 
 ## Getting started

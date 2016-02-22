@@ -1,0 +1,68 @@
+#
+#	Makefile-XSLT - basic XSLT definitions
+#
+###################################################################
+#
+#	Defines and exports the symbols
+#	XSLT	- executable stylesheet processor
+#	X_IN	- argument switch input file
+#	X_STY	- argument switch stylesheet file
+#	X_PARM	- argument switch transformation parameter
+#	X_VAL	- argument switch validate XML input (against XSD)
+#	X_TO_C	- pipe filter to generate C source code
+#
+#	Important: Do not mix up parameter order.
+#	Example: process <xml-file> with stylesheet <sty-file> and output to console (no validation, no parameter)
+#	$(XSLT) $(X_IN) <xml-file> $(X_STY) <sty-file>
+#
+#	Example: process and validate <xml-file> with stylesheet <sty-file> and output to console (no parameter)
+#	$(XSLT) $(X_VAL) $(X_IN) <xml-file> $(X_STY) <sty-file>
+#
+#	Example: process <xml-file> with stylesheet <sty-file>, parameter param1="val1" and output to console (no validation)
+#	$(XSLT) $(X_PARM) param1 "'val1'" $(X_IN) <xml-file> $(X_STY) <sty-file>
+#
+#	Example: process <xml-file> with stylesheet <sty-file> and generate C source <c-file> file (no validation, no parameter)
+#	$(XSLT) $(X_IN) <xml-file> $(X_STY) <sty-file> | $(X_TO_C) > <c-file>
+#
+##########################################################################
+#
+#	Configuration of suiting XSLT processor XSLT-Prozessors
+#	Supported so far:
+#	- Xalan (Apache style)
+#	- xalan (Debian style)
+#   - locally installed (XALANCROOT and XERCESCROOT must be set)
+#
+ifneq ($(XALANCROOT),)
+  XSLT := $(XALANCROOT)/bin/Xalan
+  X_IN   :=
+  X_STY  :=
+  X_PARM := -p
+  X_VAL  := -v
+else
+  XSLT := $(shell which Xalan)
+  ifeq ($(XSLT),)
+    XSLT := $(shell which xalan)
+    ifeq ($(XSLT),)
+	  $(error: Xalan seems not to be installed)
+    else
+      X_IN   := -in
+      X_STY  := -xsl
+      X_PARM := -param
+      X_VAL  := -validate
+    endif
+  else
+    X_IN   :=
+    X_STY  :=
+    X_PARM := -p
+    X_VAL  := -v
+  endif
+endif
+
+X_TO_C := sed -e 's/&gt;/>/g' -e 's/&lt;/</g' -e 's/&amp;/\&/g'
+
+export XSLT
+export X_IN
+export X_STY
+export X_PARM
+export X_VAL
+export X_TO_C

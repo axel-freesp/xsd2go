@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcases>
+    <part type="XmlTest1">
+        <case filename="test2/test2-test1.xml" pass="true"/>
+    </part>
+</testcases>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test1 xmlns="http://www.freesp.de/xml/freeSP/test2"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.freesp.de/xml/freeSP/test2 ../test2.xsd">
+    <element1 test1="-12" test2="doo">
+        <element2 arg1="foo" arg2="true"/>
+        <element2 arg1="bar" arg2="true"/>
+        <element2 arg1="too" arg2="false"/>
+    </element1>
+    <element1 test1="17" test2="hoo">
+        <element2 arg1="moo" arg2="true"/>
+    </element1>
+</test1>

@@ -58,22 +58,27 @@
 <xsl:template name="make-go-name">
 	<xsl:param name="name"/>
 	<xsl:param name="result" select="''"/>
+	<xsl:variable name="lname">
+		<xsl:call-template name="to-lower">
+			<xsl:with-param name="name" select="$name"/>
+		</xsl:call-template>
+	</xsl:variable>
 	<xsl:choose>
-		<xsl:when test="contains($name, '-')">
+		<xsl:when test="contains($lname, '-')">
 			<xsl:variable name="toUpper">
 				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="substring-before($name, '-')"/>
+					<xsl:with-param name="name" select="substring-before($lname, '-')"/>
 				</xsl:call-template>
 			</xsl:variable>
 			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="substring-after($name, '-')"/>
+				<xsl:with-param name="name" select="substring-after($lname, '-')"/>
 				<xsl:with-param name="result" select="concat($result, $toUpper)"/>
 			</xsl:call-template>
 		</xsl:when>
 		<xsl:otherwise>
 			<xsl:variable name="toUpper">
 				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="$name"/>
+					<xsl:with-param name="name" select="$lname"/>
 				</xsl:call-template>
 			</xsl:variable>
 			<xsl:value-of select="concat($result, $toUpper)"/>
@@ -84,6 +89,11 @@
 <xsl:template name="to-upper">
 	<xsl:param name="name"/>
 	<xsl:value-of select="concat(translate(substring($name, 1, 1), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), substring($name, 2))"/>
+</xsl:template>
+
+<xsl:template name="to-lower">
+	<xsl:param name="name"/>
+	<xsl:value-of select="translate($name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
 </xsl:template>
 
 <xsl:template name="go-type-from-simple-type">

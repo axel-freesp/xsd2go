@@ -10,7 +10,7 @@ check: $(EXAMPLES:%=%-check)
 
 define gocreate-rule
 $(1)_PARAMS := XSD_FILES=$(2) TARGET_DIR=test/$(1) PACKAGE_NAME=$$(subst -,_,$(1))
-$$(info PACKAGE_NAME=$$(PACKAGE_NAME))
+$$(info PACKAGE_NAME=$$(subst -,_,$(1)))
 .PHONY: $(2)-test
 $(2)-test: $(2)-all
 	@make -s -f xsd2go.mk $$($(1)_PARAMS) test

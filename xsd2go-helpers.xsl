@@ -6,6 +6,8 @@
 <xsl:output method="text"/>
 <xsl:strip-space elements="*"/>
 
+<xsl:param name="force-camelcase" select="'true'"/>
+
 <xsl:variable name="NL"><xsl:text>
 </xsl:text></xsl:variable>
 
@@ -59,9 +61,16 @@
 	<xsl:param name="name"/>
 	<xsl:param name="result" select="''"/>
 	<xsl:variable name="lname">
-		<xsl:call-template name="to-lower">
-			<xsl:with-param name="name" select="$name"/>
-		</xsl:call-template>
+		<xsl:choose>
+			<xsl:when test="$force-camelcase = 'true'">
+				<xsl:call-template name="to-lower">
+					<xsl:with-param name="name" select="$name"/>
+				</xsl:call-template>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$name"/>
+			</xsl:otherwise>
+		</xsl:choose>
 	</xsl:variable>
 	<xsl:choose>
 		<xsl:when test="contains($lname, '-')">

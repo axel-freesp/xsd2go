@@ -34,6 +34,21 @@
 				<xsl:with-param name="simple-type" select="/xsd:schema/xsd:simpleType[@name = $typename]"/>
 			</xsl:call-template>
 		</xsl:when>
+		<xsl:when test="($tname = 'xsd:string') or ($tname = 'xsd:NMTOKENS') or ($tname = 'xsd:NMTOKEN') or ($tname = 'xsd:dateTime')">
+			<xsl:value-of select="'string'"/>
+		</xsl:when>
+		<xsl:when test="$tname = 'xsd:integer'">
+			<xsl:value-of select="'int'"/>
+		</xsl:when>
+		<xsl:when test="$tname = 'xsd:unsignedInt'">
+			<xsl:value-of select="'uint'"/>
+		</xsl:when>
+		<xsl:when test="$tname = 'xsd:double'">
+			<xsl:value-of select="'float64'"/>
+		</xsl:when>
+		<xsl:when test="$tname = 'xsd:boolean'">
+			<xsl:value-of select="'bool'"/>
+		</xsl:when>
 		<xsl:otherwise>
 			<xsl:value-of select="concat('undefined(', $tname, ')')"/>
 		</xsl:otherwise>
@@ -90,7 +105,7 @@
 	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
 	<xsl:variable name="complextype" select="/xsd:schema/xsd:complexType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
 	<xsl:choose>
-		<xsl:when test="($type = 'xsd:string') or ($type = 'xsd:NMTOKENS') or ($type = 'xsd:NMTOKEN')">
+		<xsl:when test="($type = 'xsd:string') or ($type = 'xsd:NMTOKENS') or ($type = 'xsd:NMTOKEN') or ($type = 'xsd:dateTime')">
 			<xsl:value-of select="'string'"/>
 		</xsl:when>
 		<xsl:when test="$type = 'xsd:integer'">
@@ -101,6 +116,9 @@
 		</xsl:when>
 		<xsl:when test="$type = 'xsd:double'">
 			<xsl:value-of select="'float64'"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:boolean'">
+			<xsl:value-of select="'bool'"/>
 		</xsl:when>
 		<xsl:when test="$simpletype">
 			<xsl:call-template name="go-type-from-simple-type">

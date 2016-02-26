@@ -53,7 +53,7 @@ $(foreach X, $(XSD_FILES), $(eval $(call testtargetrule,$(TARGET_DIR)/$(notdir $
 define copytargetrule
 TEST_PARAM := $(X_PARM) testcases-filename "'$(3)'" $(X_PARM) testfiles-prefix "'$(PWD)/$$(dir $(2))'"
 $(1): $(2) $(3) $(STY) | $(TARGET_DIR)/test
-	$(XSLT) $(X_VAL) $(X_PARM) package "'$(PACKAGE_PATH)'" $$(TEST_PARAM) $(X_IN) $$< $(X_STY) $(STY_DIR)/xsd2gomain.xsl | $(X_TO_C) > $$@
+	$(XSLT) $(X_VAL) $(APPLY_PARAM) $(X_PARM) package "'$(PACKAGE_PATH)'" $$(TEST_PARAM) $(X_IN) $$< $(X_STY) $(STY_DIR)/xsd2gomain.xsl | $(X_TO_C) > $$@
 endef
 $(foreach X, $(XSD_FILES), $(eval $(call copytargetrule,$(TARGET_DIR)/test/$(notdir $(X:%.xsd=%_main.go)),$X,$(X:%.xsd=%-test.xml))))
 

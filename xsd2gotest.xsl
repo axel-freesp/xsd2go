@@ -11,13 +11,10 @@
 <xsl:param name="testfiles-prefix"/>
 <xsl:variable name="testcases" select="document($testcases-filename)/testcases"/>
 
-<xsl:variable name="NL"><xsl:text>
-</xsl:text></xsl:variable>
-
-<xsl:variable name="T"><xsl:text>	</xsl:text></xsl:variable>
+<xsl:include href="xsd2go-helpers.xsl"/>
 
 <xsl:template match="xsd:schema">
-	<xsl:value-of select="concat('package ', $package-name, $NL, $NL)"/>
+	<xsl:value-of select="concat('package ', translate($package-name, '-', '_'), $NL, $NL)"/>
 	<xsl:value-of select="concat('import (', $NL)"/>
 	<xsl:value-of select="concat($T, '&quot;testing&quot;', $NL)"/>
 	<xsl:value-of select="concat(')', $NL, $NL)"/>
@@ -54,51 +51,6 @@
 	<xsl:value-of select="concat($T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, '}', $NL)"/>
 	<xsl:value-of select="concat('}', $NL)"/>
-</xsl:template>
-
-<xsl:template name="make-go-type">
-	<xsl:param name="tname"/>
-	<xsl:choose>
-		<xsl:when test="//xsd:complexType[@name = $tname]">
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="concat('xml-', $tname)"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:value-of select="concat('undefined(', $tname, ')')"/>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template name="make-go-name">
-	<xsl:param name="name"/>
-	<xsl:param name="result" select="''"/>
-	<xsl:choose>
-		<xsl:when test="contains($name, '-')">
-			<xsl:variable name="toUpper">
-				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="substring-before($name, '-')"/>
-				</xsl:call-template>
-			</xsl:variable>
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="substring-after($name, '-')"/>
-				<xsl:with-param name="result" select="concat($result, $toUpper)"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:variable name="toUpper">
-				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="$name"/>
-				</xsl:call-template>
-			</xsl:variable>
-			<xsl:value-of select="concat($result, $toUpper)"/>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template name="to-upper">
-	<xsl:param name="name"/>
-	<xsl:value-of select="concat(translate(substring($name, 1, 1), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), substring($name, 2))"/>
 </xsl:template>
 
 </xsl:stylesheet>

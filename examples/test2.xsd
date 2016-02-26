@@ -19,9 +19,14 @@
                     <xsd:attribute name="arg2" type="xsd:string"/>
                 </xsd:complexType>
             </xsd:element>
+            <xsd:element name="element3" type="Element3" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
         <xsd:attribute name="test1" type="xsd:integer"/>
         <xsd:attribute name="test2" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Element3">
+        <xsd:attribute name="attr" type="xsd:string"/>
     </xsd:complexType>
 
     <xsd:element name="test1" type="Test1"/>

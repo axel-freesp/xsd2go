@@ -8,13 +8,10 @@
 
 <xsl:param name="package-name" select="'main'"/>
 
-<xsl:variable name="NL"><xsl:text>
-</xsl:text></xsl:variable>
-
-<xsl:variable name="T"><xsl:text>	</xsl:text></xsl:variable>
+<xsl:include href="xsd2go-helpers.xsl"/>
 
 <xsl:template match="xsd:schema">
-	<xsl:value-of select="concat('package ', $package-name, $NL, $NL)"/>
+	<xsl:value-of select="concat('package ', translate($package-name, '-', '_'), $NL, $NL)"/>
 	<xsl:value-of select="concat('import (', $NL)"/>
 	<xsl:value-of select="concat($T, '&quot;encoding/xml&quot;', $NL)"/>
 	<xsl:value-of select="concat($T, '&quot;fmt&quot;', $NL)"/>
@@ -31,47 +28,269 @@
 <xsl:template match="xsd:complexType">
 	<xsl:variable name="tname" select="@name"/>
 	<xsl:value-of select="concat('// complexType ', $tname, $NL)"/>
+	<xsl:message>
+	complexType '<xsl:value-of select="$tname"/>'
+	</xsl:message>
 	<xsl:variable name="go-name">
 		<xsl:call-template name="make-go-name">
 			<xsl:with-param name="name" select="$tname"/>
 		</xsl:call-template>
 	</xsl:variable>
 	<xsl:value-of select="concat('type Xml', $go-name, ' struct {', $NL)"/>
-	<xsl:if test="/xsd:schema/xsd:element[@type = $tname]">
+	<xsl:variable name="global-element" select="/xsd:schema/xsd:element[(@type = $tname) or (substring-after(@type, ':') = $tname)]"/>
+	<xsl:if test="$global-element">
 		<xsl:choose>
 			<xsl:when test="/xsd:schema/@targetNamespace">
-				<xsl:value-of select="concat($T, 'XMLName xml.Name `xml:&quot;', /xsd:schema/@targetNamespace, ' ', /xsd:schema/xsd:element[@type = $tname]/@name, '&quot;`', $NL)"/>
+				<xsl:value-of select="concat($T, 'XMLName xml.Name `xml:&quot;', /xsd:schema/@targetNamespace, ' ', $global-element/@name, '&quot;`', $NL)"/>
 			</xsl:when>
 			<xsl:otherwise>
 				<xsl:value-of select="concat($T, 'XMLName xml.Name', $NL)"/>
 			</xsl:otherwise>
 		</xsl:choose>
 	</xsl:if>
-	<xsl:for-each select="xsd:attribute">
-		<xsl:variable name="attr-name">
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="@name"/>
-			</xsl:call-template>
-		</xsl:variable>
-		<xsl:variable name="attr-type">
-			<xsl:call-template name="go-type">
-				<xsl:with-param name="type" select="@type"/>
-			</xsl:call-template>
-		</xsl:variable>
-		<xsl:value-of select="concat($T, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
-	</xsl:for-each>
-	<xsl:apply-templates select="xsd:sequence"/>
+	<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
+		<xsl:with-param name="xmlpath" select="''"/>
+		<xsl:with-param name="indent" select="$T"/>
+	</xsl:apply-templates>
+	<xsl:apply-templates select="xsd:sequence|xsd:simpleContent">
+		<xsl:with-param name="xmlpath" select="''"/>
+		<xsl:with-param name="indent" select="$T"/>
+	</xsl:apply-templates>
 	<xsl:value-of select="concat('}', $NL, $NL)"/>
 </xsl:template>
 
-<xsl:template match="xsd:sequence">
-	<xsl:param name="xmlpath" select="''"/>
-	<xsl:param name="indent" select="''"/>
-	<xsl:apply-templates select="xsd:element|xsd:choice">
+<xsl:template match="xsd:attributeGroup">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="ref">
+		<xsl:choose>
+			<xsl:when test="contains(@ref, ':')">
+				<xsl:value-of select="substring-after(@ref, ':')"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="@ref"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="group" select="/xsd:schema/xsd:attributeGroup[@name = $ref]"/>
+	<xsl:apply-templates select="$group/xsd:attribute|$group/xsd:attributeGroup">
 		<xsl:with-param name="xmlpath" select="$xmlpath"/>
 		<xsl:with-param name="indent" select="$indent"/>
 	</xsl:apply-templates>
 </xsl:template>
+
+<xsl:template match="xsd:attribute[@ref]">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<!-- TODO: Resolve ref -->
+	<xsl:choose>
+		<xsl:when test="@ref = 'xml:space'">
+			<xsl:value-of select="concat($indent, 'Space string `xml:&quot;space,attr&quot;`', $NL)"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:value-of select="concat($indent, 'TODO: referenced attribute ', @ref, $NL)"/>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
+
+<xsl:template match="xsd:attribute[not(@ref)]">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="attr-name">
+		<xsl:call-template name="make-go-name">
+			<xsl:with-param name="name" select="@name"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="attr-type">
+		<xsl:call-template name="go-type">
+			<xsl:with-param name="type" select="@type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
+</xsl:template>
+
+<xsl:template match="xsd:simpleContent">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:apply-templates select="xsd:extension">
+		<xsl:with-param name="xmlpath" select="$xmlpath"/>
+		<xsl:with-param name="indent" select="$indent"/>
+	</xsl:apply-templates>
+</xsl:template>
+
+<xsl:template match="xsd:extension">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="basetype">
+		<xsl:call-template name="go-type">
+			<xsl:with-param name="type" select="@base"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:choose>
+		<xsl:when test="$basetype = 'string'">
+			<xsl:value-of select="concat($indent, 'Base string `xml:&quot;', $xmlpath, ',chardata&quot;`', $NL)"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:value-of select="concat($indent, 'Base ', $basetype, $NL)"/>
+			<xsl:value-of select="concat($indent, 'BaseString []byte `xml:&quot;', $xmlpath, ',chardata&quot;`', $NL)"/>
+		</xsl:otherwise>
+	</xsl:choose>
+	<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
+		<xsl:with-param name="xmlpath" select="$xmlpath"/>
+		<xsl:with-param name="indent" select="$indent"/>
+	</xsl:apply-templates>
+</xsl:template>
+
+<xsl:template match="xsd:sequence">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:apply-templates select="xsd:element|xsd:choice|xsd:group">
+		<xsl:with-param name="xmlpath" select="$xmlpath"/>
+		<xsl:with-param name="indent" select="$indent"/>
+	</xsl:apply-templates>
+</xsl:template>
+
+<xsl:template match="xsd:element">
+	<xsl:param name="parent-min-occurs" select="1"/>
+	<xsl:param name="parent-max-occurs" select="1"/>
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="min-occurs">
+		<xsl:choose>
+			<xsl:when test="@minOccurs">
+				<xsl:value-of select="@minOccurs"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$parent-min-occurs"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="max-occurs">
+		<xsl:choose>
+			<xsl:when test="@maxOccurs">
+				<xsl:value-of select="@maxOccurs"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$parent-max-occurs"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="go-name">
+		<xsl:call-template name="make-go-name">
+			<xsl:with-param name="name" select="@name"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:choose>
+		<xsl:when test="xsd:complexType">
+			<xsl:value-of select="concat($indent, '/* Inner complexType */', $NL)"/>
+			<xsl:apply-templates select="xsd:complexType" mode="inner">
+				<xsl:with-param name="xmlpath" select="concat($xmlpath, @name)"/>
+				<xsl:with-param name="min-occurs" select="$min-occurs"/>
+				<xsl:with-param name="max-occurs" select="$max-occurs"/>
+				<xsl:with-param name="indent" select="$indent"/>
+				<xsl:with-param name="name" select="$go-name"/>
+			</xsl:apply-templates>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:variable name="go-type">
+				<xsl:call-template name="make-go-type">
+					<xsl:with-param name="tname" select="@type"/>
+				</xsl:call-template>
+			</xsl:variable>
+			<xsl:choose>
+				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
+					<xsl:value-of select="concat($indent, $go-name, ' ', $go-type, ' `xml:&quot;', $xmlpath, @name, '&quot;`', $NL)"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="concat($indent, $go-name, ' []', $go-type, ' `xml:&quot;', $xmlpath, @name, '&quot;`', $NL)"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
+
+<xsl:template match="xsd:complexType" mode="inner">
+	<xsl:param name="min-occurs" select="1"/>
+	<xsl:param name="max-occurs" select="1"/>
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:param name="name"/>
+	<xsl:choose>
+		<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
+			<xsl:value-of select="concat($indent, $name, ' struct {', $NL)"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:value-of select="concat($indent, $name, ' []struct {', $NL)"/>
+		</xsl:otherwise>
+	</xsl:choose>
+	<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
+		<xsl:with-param name="xmlpath" select="''"/>
+		<xsl:with-param name="indent" select="concat($indent, $T)"/>
+	</xsl:apply-templates>
+	<xsl:apply-templates select="xsd:sequence|xsd:choice|xsd:simpleContent">
+		<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
+		<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
+		<xsl:with-param name="xmlpath" select="''"/>
+		<xsl:with-param name="indent" select="concat($indent, $T)"/>
+	</xsl:apply-templates>
+	<xsl:value-of select="concat($indent, '} `xml:&quot;', $xmlpath, '&quot;`', $NL)"/>
+</xsl:template>
+
+<xsl:template match="xsd:choice">
+	<xsl:param name="parent-min-occurs" select="1"/>
+	<xsl:param name="parent-max-occurs" select="1"/>
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="min-occurs">
+		<xsl:choose>
+			<xsl:when test="@minOccurs">
+				<xsl:value-of select="@minOccurs"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$parent-min-occurs"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="max-occurs">
+		<xsl:choose>
+			<xsl:when test="@maxOccurs">
+				<xsl:value-of select="@maxOccurs"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$parent-max-occurs"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:apply-templates select="xsd:element|xsd:choice">
+		<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
+		<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
+		<xsl:with-param name="xmlpath" select="$xmlpath"/>
+		<xsl:with-param name="indent" select="$indent"/>
+	</xsl:apply-templates>
+</xsl:template>
+
+<xsl:template match="xsd:group">
+	<xsl:param name="xmlpath"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="ref">
+		<xsl:choose>
+			<xsl:when test="contains(@ref, ':')">
+				<xsl:value-of select="substring-after(@ref, ':')"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="@ref"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="group" select="/xsd:schema/xsd:group[@name = $ref]"/>
+	<xsl:value-of select="concat($indent, '// Group ', $ref, $NL)"/>
+	<xsl:apply-templates select="$group/xsd:sequence|$group/xsd:choice|$group/xsd:group">
+		<xsl:with-param name="xmlpath" select="$xmlpath"/>
+		<xsl:with-param name="indent" select="$indent"/>
+	</xsl:apply-templates>
+</xsl:template>
+
+<!--##########################################################-->
 
 <xsl:template match="xsd:element" mode="toplevel">
 	<xsl:value-of select="concat('// Toplevel element ', @name, ' of type ', @type, $NL)"/>
@@ -183,211 +402,6 @@
 	<xsl:value-of select="concat($T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, 'return ioutil.WriteFile(filepath, buf, 0666)', $NL)"/>
 	<xsl:value-of select="concat('}', $NL, $NL)"/>
-</xsl:template>
-
-<xsl:template match="xsd:element">
-	<xsl:param name="parent-min-occurs" select="1"/>
-	<xsl:param name="parent-max-occurs" select="1"/>
-	<xsl:param name="xmlpath" select="''"/>
-	<xsl:param name="indent" select="''"/>
-	<xsl:variable name="min-occurs">
-		<xsl:choose>
-			<xsl:when test="@minOccurs">
-				<xsl:value-of select="@minOccurs"/>
-			</xsl:when>
-			<xsl:otherwise>
-				<xsl:value-of select="$parent-min-occurs"/>
-			</xsl:otherwise>
-		</xsl:choose>
-	</xsl:variable>
-	<xsl:variable name="max-occurs">
-		<xsl:choose>
-			<xsl:when test="@maxOccurs">
-				<xsl:value-of select="@maxOccurs"/>
-			</xsl:when>
-			<xsl:otherwise>
-				<xsl:value-of select="$parent-max-occurs"/>
-			</xsl:otherwise>
-		</xsl:choose>
-	</xsl:variable>
-	<xsl:variable name="go-name">
-		<xsl:call-template name="make-go-name">
-			<xsl:with-param name="name" select="@name"/>
-		</xsl:call-template>
-	</xsl:variable>
-	<xsl:choose>
-		<xsl:when test="xsd:complexType">
-			<xsl:value-of select="concat($T, '/* Inner complexType */', $NL)"/>
-			<xsl:apply-templates select="xsd:complexType" mode="inner">
-				<xsl:with-param name="xmlpath" select="concat($xmlpath, @name)"/>
-				<xsl:with-param name="min-occurs" select="$min-occurs"/>
-				<xsl:with-param name="max-occurs" select="$max-occurs"/>
-				<xsl:with-param name="intend" select="$indent"/>
-				<xsl:with-param name="name" select="$go-name"/>
-			</xsl:apply-templates>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:variable name="go-type">
-				<xsl:call-template name="make-go-type">
-					<xsl:with-param name="tname" select="@type"/>
-				</xsl:call-template>
-			</xsl:variable>
-			<xsl:choose>
-				<xsl:when test="($min-occurs = '1') and ($max-occurs = '1')">
-					<xsl:value-of select="concat($T, $go-name, ' ', $go-type, ' `xml:&quot;', $xmlpath, @name, '&quot;`', $NL)"/>
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="concat($T, $go-name, ' []', $go-type, ' `xml:&quot;', $xmlpath, @name, '&quot;`', $NL)"/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template match="xsd:complexType" mode="inner">
-	<xsl:param name="min-occurs" select="1"/>
-	<xsl:param name="max-occurs" select="1"/>
-	<xsl:param name="xmlpath"/>
-	<xsl:param name="indent"/>
-	<xsl:param name="name"/>
-	<xsl:choose>
-		<xsl:when test="($min-occurs = '1') and ($max-occurs = '1')">
-			<xsl:value-of select="concat($T, $indent, $name, ' struct {', $NL)"/>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:value-of select="concat($T, $indent, $name, ' []struct {', $NL)"/>
-		</xsl:otherwise>
-	</xsl:choose>
-	<xsl:for-each select="xsd:attribute">
-		<xsl:variable name="attr-name">
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="@name"/>
-			</xsl:call-template>
-		</xsl:variable>
-		<xsl:variable name="attr-type">
-			<xsl:call-template name="go-type">
-				<xsl:with-param name="type" select="@type"/>
-			</xsl:call-template>
-		</xsl:variable>
-		<xsl:value-of select="concat($T, $indent, $T, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
-	</xsl:for-each>
-	<xsl:apply-templates select="xsd:sequence">
-		<xsl:with-param name="xmlpath" select="concat($xmlpath, '&gt;')"/>
-		<xsl:with-param name="indent" select="concat($indent, $T)"/>
-	</xsl:apply-templates>
-	<xsl:value-of select="concat($T, $indent, '} `xml:&quot;', $xmlpath, '&quot;`', $NL)"/>
-</xsl:template>
-
-<xsl:template name="make-go-type">
-	<xsl:param name="tname"/>
-	<xsl:choose>
-		<xsl:when test="//xsd:complexType[@name = $tname]">
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="concat('xml-', $tname)"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:value-of select="concat('undefined(', $tname, ')')"/>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template match="xsd:choice">
-	<xsl:param name="parent-min-occurs" select="1"/>
-	<xsl:param name="parent-max-occurs" select="1"/>
-	<xsl:param name="xmlpath" select="''"/>
-	<xsl:param name="indent" select="''"/>
-	<xsl:variable name="min-occurs">
-		<xsl:choose>
-			<xsl:when test="@minOccurs">
-				<xsl:value-of select="@minOccurs"/>
-			</xsl:when>
-			<xsl:otherwise>
-				<xsl:value-of select="$parent-min-occurs"/>
-			</xsl:otherwise>
-		</xsl:choose>
-	</xsl:variable>
-	<xsl:variable name="max-occurs">
-		<xsl:choose>
-			<xsl:when test="@maxOccurs">
-				<xsl:value-of select="@maxOccurs"/>
-			</xsl:when>
-			<xsl:otherwise>
-				<xsl:value-of select="$parent-max-occurs"/>
-			</xsl:otherwise>
-		</xsl:choose>
-	</xsl:variable>
-	<xsl:apply-templates select="xsd:element|xsd:choice">
-		<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
-		<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
-		<xsl:with-param name="xmlpath" select="$xmlpath"/>
-		<xsl:with-param name="indent" select="$indent"/>
-	</xsl:apply-templates>
-</xsl:template>
-
-<xsl:template name="make-go-name">
-	<xsl:param name="name"/>
-	<xsl:param name="result" select="''"/>
-	<xsl:choose>
-		<xsl:when test="contains($name, '-')">
-			<xsl:variable name="toUpper">
-				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="substring-before($name, '-')"/>
-				</xsl:call-template>
-			</xsl:variable>
-			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="substring-after($name, '-')"/>
-				<xsl:with-param name="result" select="concat($result, $toUpper)"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:variable name="toUpper">
-				<xsl:call-template name="to-upper">
-					<xsl:with-param name="name" select="$name"/>
-				</xsl:call-template>
-			</xsl:variable>
-			<xsl:value-of select="concat($result, $toUpper)"/>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template name="to-upper">
-	<xsl:param name="name"/>
-	<xsl:value-of select="concat(translate(substring($name, 1, 1), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), substring($name, 2))"/>
-</xsl:template>
-
-<xsl:template name="go-type-from-simple-type">
-	<xsl:param name="simple-type"/>
-	<xsl:choose>
-		<xsl:when test="$simple-type/xsd:restriction">
-			<xsl:call-template name="go-type">
-				<xsl:with-param name="type" select="$simple-type/xsd:restriction/@base"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:value-of select="concat('/*FIXME: simpleType ', $simple-type/@name, ' is no restriction*/')"/>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-<xsl:template name="go-type">
-	<xsl:param name="type"/>
-	<xsl:choose>
-		<xsl:when test="$type = 'xsd:string'">
-			<xsl:value-of select="'string'"/>
-		</xsl:when>
-		<xsl:when test="$type = 'xsd:integer'">
-			<xsl:value-of select="'int'"/>
-		</xsl:when>
-		<xsl:when test="//xsd:simpleType[@name = $type]">
-			<xsl:call-template name="go-type-from-simple-type">
-				<xsl:with-param name="simple-type" select="//xsd:simpleType[@name = $type]"/>
-			</xsl:call-template>
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:value-of select="concat('other(', $type, ')')"/>
-		</xsl:otherwise>
-	</xsl:choose>
 </xsl:template>
 
 </xsl:stylesheet>

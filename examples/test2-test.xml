@@ -2,5 +2,6 @@
 <testcases>
     <part type="XmlTest1">
         <case filename="test2/test2-test1.xml" pass="true"/>
+        <case filename="test2/test2-test2.xml" pass="true"/>
     </part>
 </testcases>

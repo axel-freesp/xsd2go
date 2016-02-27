@@ -7,7 +7,7 @@
 
     <xsd:complexType name="Test1">
         <xsd:attribute name="test1" type="xsd:integer" use="required"/>
-        <xsd:attribute name="test2" type="xsd:string"/>
+        <xsd:attribute name="test2" type="xsd:string" default="default value"/>
     </xsd:complexType>
 
     <xsd:element name="test1" type="Test1"/>

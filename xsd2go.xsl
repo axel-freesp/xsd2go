@@ -140,7 +140,15 @@
 			<xsl:with-param name="type" select="@type"/>
 		</xsl:call-template>
 	</xsl:variable>
-	<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
+	<xsl:choose>
+		<xsl:when test="$attr-type = 'string'">
+			<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:value-of select="concat($indent, $attr-name, 'StringRep string `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
+			<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, $NL)"/>
+		</xsl:otherwise>
+	</xsl:choose>
 </xsl:template>
 
 
@@ -164,7 +172,10 @@
 	</xsl:apply-templates>
 </xsl:template>
 
-<xsl:template match="xsd:attribute" mode="validation">
+<xsl:template match="xsd:attribute[@ref]" mode="validation">
+</xsl:template>
+
+<xsl:template match="xsd:attribute[not(@ref)]" mode="validation">
 	<xsl:param name="go-elem"/>
 	<xsl:param name="indent"/>
 	<xsl:variable name="go-name">
@@ -173,7 +184,30 @@
 		</xsl:call-template>
 	</xsl:variable>
 	<xsl:variable name="type" select="@type"/>
+	<xsl:variable name="attr-name">
+		<xsl:call-template name="make-go-name">
+			<xsl:with-param name="name" select="@name"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="attr-type">
+		<xsl:call-template name="go-type">
+			<xsl:with-param name="type" select="@type"/>
+		</xsl:call-template>
+	</xsl:variable>
 	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:if test="@use = 'required'">
+		<xsl:choose>
+			<xsl:when test="$attr-type = 'string'">
+				<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $attr-name, ') == 0 {', $NL)"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $attr-name, 'StringRep) == 0 {', $NL)"/>
+			</xsl:otherwise>
+		</xsl:choose>
+		<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Missing attribute ', $go-elem, '.', $attr-name, '\n&quot;)', $NL)"/>
+		<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
+		<xsl:value-of select="concat($indent, '}', $NL)"/>
+	</xsl:if>
 	<xsl:choose>
 		<xsl:when test="$type = 'xsd:string'">
 			<xsl:value-of select="concat($indent, '// Nothing to validate', $NL)"/>

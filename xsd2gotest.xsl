@@ -32,21 +32,25 @@
 	<xsl:value-of select="concat($T, 'testcases := []struct {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'filename string', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'validxml bool', $NL)"/>
+	<xsl:value-of select="concat($T, $T, 'cause string', $NL)"/>
 	<xsl:value-of select="concat($T, '}{', $NL)"/>
 	<xsl:for-each select="$testcases/part[@type = $go-type]/case">
-		<xsl:value-of select="concat($T, $T, '{&quot;', $testfiles-prefix, @filename, '&quot;, ', @pass, '},', $NL)"/>
+		<xsl:value-of select="concat($T, $T, '{&quot;', $testfiles-prefix, @filename, '&quot;, ', @pass, ', &quot;', @cause, '&quot;,},', $NL)"/>
 	</xsl:for-each>
 	<xsl:value-of select="concat($T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, 'for i, c := range testcases {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'xmlt := ', $go-type, 'New()', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'err := xmlt.ReadFile(c.filename)', $NL)"/>
+	<xsl:value-of select="concat($T, $T, 'if err == nil {', $NL)"/>
+	<xsl:value-of select="concat($T, $T, $T, 'err = xmlt.Validate()', $NL)"/>
+	<xsl:value-of select="concat($T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'if c.validxml {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, 'if err != nil {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, $T, 't.Errorf(&quot;', $go-type, ': testcase %d failed: %s\n&quot;, i, err)', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, $T, '} else {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, 'if err == nil {', $NL)"/>
-	<xsl:value-of select="concat($T, $T, $T, $T, 't.Errorf(&quot;', $go-type, ': testcase %d failed: invalid XML file accepted\n&quot;, i)', $NL)"/>
+	<xsl:value-of select="concat($T, $T, $T, $T, 't.Errorf(&quot;', $go-type, ': testcase %d failed: invalid XML file accepted. Cause: %s\n&quot;, i, c.cause)', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, '}', $NL)"/>

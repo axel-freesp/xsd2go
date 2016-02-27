@@ -41,9 +41,6 @@
 	<xsl:value-of select="concat($T, 'for i, c := range testcases {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'xmlt := ', $go-type, 'New()', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'err := xmlt.ReadFile(c.filename)', $NL)"/>
-	<xsl:value-of select="concat($T, $T, 'if err == nil {', $NL)"/>
-	<xsl:value-of select="concat($T, $T, $T, 'err = xmlt.Validate()', $NL)"/>
-	<xsl:value-of select="concat($T, $T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'if c.validxml {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, 'if err != nil {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, $T, $T, 't.Errorf(&quot;', $go-type, ': testcase %d failed: %s\n&quot;, i, err)', $NL)"/>

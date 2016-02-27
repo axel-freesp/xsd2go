@@ -141,6 +141,99 @@
 	</xsl:choose>
 </xsl:template>
 
+<xsl:template name="handle-integer-attribute">
+	<!-- active element: xsd:attribute -->
+	<xsl:param name="go-attr"/>
+	<xsl:param name="indent"/>
+	<xsl:variable name="min-value">
+		<xsl:choose>
+			<xsl:when test="@minExclusive">
+				<xsl:value-of select="@minExclusive + 1"/>
+			</xsl:when>
+			<xsl:when test="@minInclusive">
+				<xsl:value-of select="@minInclusive"/>
+			</xsl:when>
+			<xsl:when test="(@type = 'xsd:nonNegativeInteger') or
+				            (@type = 'xsd:unsignedLong') or
+				            (@type = 'xsd:unsignedInt') or
+				            (@type = 'xsd:unsignedShort') or
+				            (@type = 'xsd:unsignedByte')">
+				<xsl:value-of select="0"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:positiveInteger'">
+				<xsl:value-of select="1"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:byte'">
+				<xsl:value-of select="-128"/>
+			</xsl:when>
+			<xsl:when test="(@type = 'xsd:int') or
+			                (@type = 'xsd:integer') or
+			                (@type = 'xsd:negativeInteger') or
+				            (@type = 'xsd:nonPositiveInteger')">
+				<xsl:value-of select="-2147483648"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:short'">
+				<xsl:value-of select="-32768"/>
+			</xsl:when>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="max-value">
+		<xsl:choose>
+			<xsl:when test="@maxExclusive">
+				<xsl:value-of select="@maxExclusive - 1"/>
+			</xsl:when>
+			<xsl:when test="@maxInclusive">
+				<xsl:value-of select="@maxInclusive"/>
+			</xsl:when>
+			<xsl:when test="(@type = 'xsd:nonPositiveInteger')">
+				<xsl:value-of select="0"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:negativeInteger'">
+				<xsl:value-of select="-1"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:byte'">
+				<xsl:value-of select="127"/>
+			</xsl:when>
+			<xsl:when test="(@type = 'xsd:int') or
+			                (@type = 'xsd:integer') or
+			                (@type = 'xsd:negativeInteger') or
+				            (@type = 'xsd:nonPositiveInteger')">
+				<xsl:value-of select="2147483647"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:short'">
+				<xsl:value-of select="32767"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:unsignedInt'">
+				<xsl:value-of select="4294967295"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:unsignedShort'">
+				<xsl:value-of select="65535"/>
+			</xsl:when>
+			<xsl:when test="@type = 'xsd:unsignedByte'">
+				<xsl:value-of select="255"/>
+			</xsl:when>
+		</xsl:choose>
+	</xsl:variable>
+	<xsl:variable name="go-attr-string" select="concat($go-attr, 'StringRep')"/>
+	<xsl:value-of select="concat($indent, '// Convert and validate ', @type, $NL)"/>
+	<xsl:value-of select="concat($indent, '{', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, 'var n int', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, 'n, err = fmt.Sscanf(', $go-attr-string, ', &quot;%v&quot;, &amp;', $go-attr, ')', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, 'if n != 1 || err != nil {', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Invalid integer data in attribute ', $go-attr, '.\n&quot;)', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, 'if ', $go-attr-string, ' != fmt.Sprintf(&quot;%d&quot;,', $go-attr, ') {', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Junk integer data in attribute ', $go-attr, '.\n&quot;)', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, 'if ', $go-attr, ' &lt; ', $min-value, ' || ', $go-attr, ' &gt; ', $max-value, ' {', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Integer data out of range ', $go-attr, '.\n&quot;)', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
+	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	<xsl:value-of select="concat($indent, '}', $NL)"/>
+</xsl:template>
+
 <xsl:template match="xsd:attribute[not(@ref)]">
 	<xsl:param name="go-elem"/>
 	<xsl:param name="xmlpath"/>
@@ -164,31 +257,86 @@
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:value-of select="concat($indent, $attr-name, 'StringRep string `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
-					<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, $NL)"/>
+					<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, ' `xml:&quot;-&quot;`', $NL)"/>
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:when>
 		<xsl:when test="$mode = 'validation'">
-			<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $attr-type) or (@name = substring-after($attr-type, ':'))]"/>
+			<xsl:variable name="go-attr"        select="concat($go-elem, '.', $attr-name)"/>
+			<xsl:variable name="go-attr-string" select="concat($go-attr, 'StringRep')"/>
+			<xsl:variable name="simpletype"     select="/xsd:schema/xsd:simpleType[(@name = $attr-type) or (@name = substring-after($attr-type, ':'))]"/>
+			<xsl:variable name="is-integer-type">
+				<xsl:if test="(@type = 'xsd:byte') or
+				              (@type = 'xsd:int') or
+				              (@type = 'xsd:integer') or
+				              (@type = 'xsd:long') or
+				              (@type = 'xsd:negativeInteger') or
+				              (@type = 'xsd:nonNegativeInteger') or
+				              (@type = 'xsd:nonPositiveInteger') or
+				              (@type = 'xsd:positiveInteger') or
+				              (@type = 'xsd:short') or
+				              (@type = 'xsd:unsignedLong') or
+				              (@type = 'xsd:unsignedInt') or
+				              (@type = 'xsd:unsignedShort') or
+				              (@type = 'xsd:unsignedByte')">
+					<xsl:value-of select="'YES'"/>
+				</xsl:if>
+			</xsl:variable>
+			<xsl:variable name="is-fractional-type">
+				<xsl:if test="(@type = 'xsd:decimal') or
+				              (@type = 'xsd:double')">
+					<xsl:value-of select="'YES'"/>
+				</xsl:if>
+			</xsl:variable>
 			<xsl:if test="@use = 'required'">
 				<xsl:choose>
 					<xsl:when test="$attr-type = 'string'">
-						<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $attr-name, ') == 0 {', $NL)"/>
+						<xsl:value-of select="concat($indent, 'if len(', $go-attr, ') == 0 {', $NL)"/>
 					</xsl:when>
 					<xsl:otherwise>
-						<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $attr-name, 'StringRep) == 0 {', $NL)"/>
+						<xsl:value-of select="concat($indent, 'if len(', $go-attr-string, ') == 0 {', $NL)"/>
 					</xsl:otherwise>
 				</xsl:choose>
-				<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Missing attribute ', $go-elem, '.', $attr-name, '\n&quot;)', $NL)"/>
+				<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Missing attribute ', $go-attr, '\n&quot;)', $NL)"/>
 				<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
 				<xsl:value-of select="concat($indent, '}', $NL)"/>
 			</xsl:if>
+			<xsl:if test="@default">
+				<xsl:choose>
+					<xsl:when test="$attr-type = 'string'">
+						<xsl:value-of select="concat($indent, 'if len(', $go-attr, ') == 0 {', $NL)"/>
+						<xsl:value-of select="concat($indent, $T, $go-attr, ' = &quot;', @default, '&quot;', $NL)"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:value-of select="concat($indent, 'if len(', $go-attr-string, ') == 0 {', $NL)"/>
+						<xsl:value-of select="concat($indent, $T, $go-attr-string, ' = &quot;', @default, '&quot;', $NL)"/>
+					</xsl:otherwise>
+				</xsl:choose>
+				<xsl:value-of select="concat($indent, '}', $NL)"/>
+			</xsl:if>
+			<xsl:if test="@fixed">
+				<xsl:choose>
+					<xsl:when test="$attr-type = 'string'">
+						<xsl:value-of select="concat($indent, $T, $go-attr, ' = &quot;', @fixed, '&quot;', $NL)"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:value-of select="concat($indent, $T, $go-attr-string, ' = &quot;', @fixed, '&quot;', $NL)"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>
 			<xsl:choose>
-				<xsl:when test="$attr-type = 'xsd:string'">
+				<xsl:when test="@type = 'xsd:string'">
 					<xsl:value-of select="concat($indent, '// Nothing to validate', $NL)"/>
 					<xsl:value-of select="concat($indent, '_ = ', $go-elem, $NL)"/>
 				</xsl:when>
-				<xsl:when test="$attr-type = 'xsd:dateTime'">
+				<xsl:when test="$is-integer-type = 'YES'">
+					<xsl:call-template name="handle-integer-attribute">
+						<!-- active element: xsd:attribute -->
+						<xsl:with-param name="go-attr" select="$go-attr"/>
+						<xsl:with-param name="indent" select="$indent"/>
+					</xsl:call-template>
+				</xsl:when>
+				<xsl:when test="@type = 'xsd:dateTime'">
 					<xsl:value-of select="concat($indent, '// TODO: validate xsd:dateTime', $NL)"/>
 					<xsl:value-of select="concat($indent, '_ = ', $go-elem, $NL)"/>
 				</xsl:when>
@@ -207,7 +355,7 @@
 					<xsl:value-of select="concat($indent, '// TODO: validate pattern', $NL)"/>
 					<xsl:value-of select="concat($indent, '_ = ', $go-elem, $NL)"/>
 				</xsl:when>
-				<xsl:when test="$attr-type = 'xsd:NMTOKEN'">
+				<xsl:when test="@type = 'xsd:NMTOKEN'">
 					<xsl:value-of select="concat($indent, '// TODO: validate xsd:NMTOKEN', $NL)"/>
 					<xsl:value-of select="concat($indent, '_ = ', $go-elem, $NL)"/>
 				</xsl:when>
@@ -623,6 +771,9 @@
 	-->
 	<xsl:value-of select="concat('func (g *', $go-type, ') Read(data []byte) (cnt int, err error) {', $NL)"/>
 	<xsl:value-of select="concat($T, 'err = xml.Unmarshal(data, g)', $NL)"/>
+	<xsl:value-of select="concat($T, 'if err == nil {', $NL)"/>
+	<xsl:value-of select="concat($T, $T, 'err = g.Validate()', $NL)"/>
+	<xsl:value-of select="concat($T, '}', $NL)"/>
 	<xsl:value-of select="concat($T, 'if err != nil {', $NL)"/>
 	<xsl:value-of select="concat($T, $T, 'return', $NL)"/>
 	<xsl:value-of select="concat($T, '}', $NL)"/>

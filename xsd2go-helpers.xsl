@@ -227,6 +227,23 @@
 	</xsl:if>
 </xsl:template>
 
+<xsl:template name="is-numeric-type">
+	<xsl:param name="type"/>
+	<xsl:variable name="yes1">
+		<xsl:call-template name="is-integer-type">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="yes2">
+		<xsl:call-template name="is-integer-simpletype">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:if test="($yes1 = 'YES') or ($yes2 = 'YES')">
+		<xsl:value-of select="'YES'"/>
+	</xsl:if>
+</xsl:template>
+
 <xsl:template name="get-min-value">
 	<xsl:param name="type"/>
 	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>

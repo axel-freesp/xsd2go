@@ -1,6 +1,6 @@
 #
 
-EXAMPLES := $(filter-out examples/xml.xsd examples/AUTOSAR%, $(wildcard examples/*.xsd))
+EXAMPLES := $(filter-out examples/xml.xsd, $(wildcard examples/*.xsd))
 .PHONY: test all clean check
 test: $(EXAMPLES:%=%-test)
 all: $(EXAMPLES:%=%-all)

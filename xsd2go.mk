@@ -39,7 +39,7 @@ clean:
 
 define targetrule
 $(1): $(2) $(STY) | $(TARGET_DIR)
-	$(XSLT) $(X_VAL) $(APPLY_PARAM) $(X_IN) $$< $(X_STY) $(STY_DIR)/xsd2go.xsl | $(X_TO_C) > $$@
+	$(XSLT) $(X_VAL) $(APPLY_PARAM) $(X_PARM) source-file "'$(2)'" $(X_IN) $$< $(X_STY) $(STY_DIR)/xsd2go.xsl | $(X_TO_C) > $$@
 endef
 $(foreach X, $(XSD_FILES), $(eval $(call targetrule,$(TARGET_DIR)/$(notdir $(X:%.xsd=%.go)),$X)))
 

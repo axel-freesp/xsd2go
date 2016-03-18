@@ -133,6 +133,39 @@
 		<xsl:when test="$type = 'xsd:unsignedInt'">
 			<xsl:value-of select="'uint'"/>
 		</xsl:when>
+		<xsl:when test="@type = 'xsd:byte'">
+			<xsl:value-of select="'byte'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:int'">
+			<xsl:value-of select="'int'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:long'">
+			<xsl:value-of select="'int64'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:negativeInteger'">
+			<xsl:value-of select="'int'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:nonNegativeInteger'">
+			<xsl:value-of select="'uint'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:nonPositiveInteger'">
+			<xsl:value-of select="'int'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:positiveInteger'">
+			<xsl:value-of select="'uint'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:short'">
+			<xsl:value-of select="'short'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:unsignedLong'">
+			<xsl:value-of select="'uint64'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:unsignedShort'">
+			<xsl:value-of select="'uint'"/>
+		</xsl:when>
+		<xsl:when test="@type = 'xsd:unsignedByte'">
+			<xsl:value-of select="'ubyte'"/>
+		</xsl:when>
 		<xsl:when test="$type = 'xsd:double'">
 			<xsl:value-of select="'float64'"/>
 		</xsl:when>
@@ -152,6 +185,134 @@
 		<xsl:otherwise>
 			<xsl:value-of select="concat('other(', $type, ')')"/>
 		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
+
+<xsl:template name="is-integer-type">
+	<xsl:param name="type"/>
+	<xsl:if test="($type = 'xsd:byte') or
+				  ($type = 'xsd:int') or
+				  ($type = 'xsd:integer') or
+				  ($type = 'xsd:long') or
+				  ($type = 'xsd:negativeInteger') or
+				  ($type = 'xsd:nonNegativeInteger') or
+				  ($type = 'xsd:nonPositiveInteger') or
+				  ($type = 'xsd:positiveInteger') or
+				  ($type = 'xsd:short') or
+				  ($type = 'xsd:unsignedLong') or
+				  ($type = 'xsd:unsignedInt') or
+				  ($type = 'xsd:unsignedShort') or
+				  ($type = 'xsd:unsignedByte')">
+		<xsl:value-of select="'YES'"/>
+	</xsl:if>
+</xsl:template>
+
+<xsl:template name="is-integer-simpletype">
+	<xsl:param name="type"/>
+	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:if test="$simpletype">
+		<xsl:variable name="yes1">
+			<xsl:call-template name="is-integer-type">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:variable name="yes2">
+			<xsl:call-template name="is-integer-simpletype">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:if test="($yes1 = 'YES') or ($yes2 = 'YES')">
+			<xsl:value-of select="'YES'"/>
+		</xsl:if>
+	</xsl:if>
+</xsl:template>
+
+<xsl:template name="get-min-value">
+	<xsl:param name="type"/>
+	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:choose>
+		<xsl:when test="$simpletype/xsd:restriction/xsd:minInclusive">
+			<xsl:value-of select="$simpletype/xsd:restriction/xsd:minInclusive/@value"/>
+		</xsl:when>
+		<xsl:when test="$simpletype/xsd:restriction/xsd:minExclusive">
+			<xsl:value-of select="$simpletype/xsd:restriction/xsd:minExclusive/@value + 1"/>
+		</xsl:when>
+		<xsl:when test="$simpletype/xsd:restriction">
+			<xsl:call-template name="get-min-value">
+				<xsl:with-param name="type">
+					<xsl:value-of select="$simpletype/xsd:restriction/@base"/>
+				</xsl:with-param>
+			</xsl:call-template>
+		</xsl:when>
+		<xsl:when test="($type = 'xsd:nonNegativeInteger') or
+						($type = 'xsd:unsignedLong') or
+						($type = 'xsd:unsignedInt') or
+						($type = 'xsd:unsignedShort') or
+						($type = 'xsd:unsignedByte')">
+			<xsl:value-of select="0"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:positiveInteger'">
+			<xsl:value-of select="1"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:byte'">
+			<xsl:value-of select="-128"/>
+		</xsl:when>
+		<xsl:when test="($type = 'xsd:int') or
+						($type = 'xsd:integer') or
+						($type = 'xsd:negativeInteger') or
+						($type = 'xsd:nonPositiveInteger')">
+			<xsl:value-of select="-2147483648"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:short'">
+			<xsl:value-of select="-32768"/>
+		</xsl:when>
+	</xsl:choose>
+</xsl:template>
+
+<xsl:template name="get-max-value">
+	<xsl:param name="type"/>
+	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:choose>
+		<xsl:when test="$simpletype/xsd:restriction/xsd:maxInclusive">
+			<xsl:value-of select="$simpletype/xsd:restriction/xsd:maxInclusive/@value"/>
+		</xsl:when>
+		<xsl:when test="$simpletype/xsd:restriction/xsd:maxExclusive">
+			<xsl:value-of select="$simpletype/xsd:restriction/xsd:maxExclusive/@value - 1"/>
+		</xsl:when>
+		<xsl:when test="$simpletype/xsd:restriction">
+			<xsl:call-template name="get-max-value">
+				<xsl:with-param name="type">
+					<xsl:value-of select="$simpletype/xsd:restriction/@base"/>
+				</xsl:with-param>
+			</xsl:call-template>
+		</xsl:when>
+		<xsl:when test="($type = 'xsd:nonPositiveInteger')">
+			<xsl:value-of select="0"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:negativeInteger'">
+			<xsl:value-of select="-1"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:byte'">
+			<xsl:value-of select="127"/>
+		</xsl:when>
+		<xsl:when test="($type = 'xsd:int') or
+						($type = 'xsd:integer') or
+						($type = 'xsd:negativeInteger') or
+						($type = 'xsd:nonPositiveInteger')">
+			<xsl:value-of select="2147483647"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:short'">
+			<xsl:value-of select="32767"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:unsignedInt'">
+			<xsl:value-of select="4294967295"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:unsignedShort'">
+			<xsl:value-of select="65535"/>
+		</xsl:when>
+		<xsl:when test="$type = 'xsd:unsignedByte'">
+			<xsl:value-of select="255"/>
+		</xsl:when>
 	</xsl:choose>
 </xsl:template>
 

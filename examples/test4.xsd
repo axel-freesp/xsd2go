@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.freesp.de/xml/freeSP/test4"
+            xmlns="http://www.freesp.de/xml/freeSP/test4"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            elementFormDefault="qualified">
+    <xsd:simpleType name="NumAttr">
+        <xsd:restriction base="xsd:unsignedInt">
+            <xsd:maxInclusive value="20"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="NumAttr2">
+        <xsd:restriction base="NumAttr">
+            <xsd:minExclusive value="2"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:complexType name="Test1">
+        <xsd:attribute name="test1" type="NumAttr2" use="required"/>
+    </xsd:complexType>
+
+    <xsd:element name="test1" type="Test1"/>
+</xsd:schema>

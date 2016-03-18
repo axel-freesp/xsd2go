@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcases>
+    <part type="XmlTest1">
+        <case filename="test4/test4-test1.xml" pass="true"  />
+        <case filename="test4/test4-test2.xml" pass="false" cause="Attribute value out of range."/>
+        <case filename="test4/test4-test3.xml" pass="false" cause="Attribute value out of range."/>
+    </part>
+</testcases>

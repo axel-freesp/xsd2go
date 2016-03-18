@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test1 xmlns="http://www.freesp.de/xml/freeSP/test5"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.freesp.de/xml/freeSP/test5 ../test5.xsd">
+    <value>4</value>
+</test1>

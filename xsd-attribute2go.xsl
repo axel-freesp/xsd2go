@@ -3,6 +3,8 @@
 				xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 				xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+<xsl:include href="output-helpers.xsl"/>
+
 <xsl:template match="xsd:attribute[@ref]">
 	<xsl:param name="go-elem"/>
 	<xsl:param name="xmlpath"/>
@@ -26,40 +28,6 @@
 	</xsl:choose>
 </xsl:template>
 
-<xsl:template name="output-integer-conversion">
-	<xsl:param name="type"/>
-	<xsl:param name="go-string"/>
-	<xsl:param name="go-val"/>
-	<xsl:param name="indent"/>
-	<xsl:param name="min-value"/>
-	<xsl:param name="max-value"/>
-	<xsl:value-of select="concat($indent, '// Convert and validate ', $type, $NL)"/>
-	<xsl:value-of select="concat($indent, '{', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, 'var n int', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, 'n, err = fmt.Sscanf(', $go-string, ', &quot;%v&quot;, &amp;', $go-val, ')', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, 'if n != 1 || err != nil {', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Invalid integer data in attribute ', @name, '.\n&quot;)', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
-	<!-- TODO: for float numbers evaluate regexp: -->
-	<xsl:value-of select="concat($indent, $T, 'if ', $go-string, ' != fmt.Sprintf(&quot;%v&quot;,', $go-val, ') {', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Junk integer data in attribute ', @name, '.\n&quot;)', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
-	<xsl:variable name="is-float-type">
-		<xsl:call-template name="is-float-type">
-			<xsl:with-param name="type" select="$type"/>
-		</xsl:call-template>
-	</xsl:variable>
-	<xsl:if test="not($is-float-type = 'YES')">
-		<xsl:value-of select="concat($indent, $T, 'if ', $go-val, ' &lt; ', $min-value, ' || ', $go-val, ' &gt; ', $max-value, ' {', $NL)"/>
-		<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Integer data out of range ', @name, '.\n&quot;)', $NL)"/>
-		<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
-		<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
-	</xsl:if>
-	<xsl:value-of select="concat($indent, '}', $NL)"/>
-</xsl:template>
-
 <xsl:template name="output-integer-attribute">
 	<!-- active element: xsd:attribute -->
 	<xsl:param name="go-attr"/>
@@ -67,13 +35,19 @@
 	<xsl:param name="min-value"/>
 	<xsl:param name="max-value"/>
 	<xsl:variable name="go-attr-string" select="concat($go-attr, 'StringRep')"/>
-	<xsl:call-template name="output-integer-conversion">
-		<xsl:with-param name="type"      select="@type"/>
-		<xsl:with-param name="go-string" select="$go-attr-string"/>
-		<xsl:with-param name="go-val"    select="$go-attr"/>
-		<xsl:with-param name="indent"    select="$indent"/>
-		<xsl:with-param name="min-value" select="$min-value"/>
-		<xsl:with-param name="max-value" select="$max-value"/>
+	<xsl:variable name="is-optional">
+		<xsl:if test="not(@use = 'required')">
+			<xsl:value-of select="'YES'"/>
+		</xsl:if>
+	</xsl:variable>
+	<xsl:call-template name="output-numeric-conversion">
+		<xsl:with-param name="type"        select="@type"/>
+		<xsl:with-param name="go-string"   select="$go-attr-string"/>
+		<xsl:with-param name="go-val"      select="$go-attr"/>
+		<xsl:with-param name="indent"      select="$indent"/>
+		<xsl:with-param name="min-value"   select="$min-value"/>
+		<xsl:with-param name="max-value"   select="$max-value"/>
+		<xsl:with-param name="is-optional" select="$is-optional"/>
 	</xsl:call-template>
 </xsl:template>
 

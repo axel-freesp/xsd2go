@@ -37,9 +37,9 @@
 <xsl:template match="xsd:complexType">
 	<xsl:variable name="tname" select="@name"/>
 	<xsl:value-of select="concat('// complexType ', $tname, $NL)"/>
-	<xsl:message>
+	<!--xsl:message>
 	complexType '<xsl:value-of select="$tname"/>'
-	</xsl:message>
+	</xsl:message-->
 	<xsl:variable name="go-name">
 		<xsl:call-template name="make-go-name">
 			<xsl:with-param name="name" select="$tname"/>
@@ -350,58 +350,14 @@
 							<xsl:with-param name="type" select="@type"/>
 						</xsl:call-template>
 					</xsl:variable>
-					<xsl:choose>
-						<xsl:when test="not($is-numeric-type = 'YES') and (not($max-occurs) or ($max-occurs = '1'))">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, ') &gt; ', 1, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too many elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($is-numeric-type = 'YES') and not($max-occurs = 'unbounded')">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, ') &gt; ', $max-occurs, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too many elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($max-occurs) or ($max-occurs = '1')">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, 'StringRep) &gt; ', 1, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too many elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($max-occurs = 'unbounded')">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, 'StringRep) &gt; ', $max-occurs, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too many elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-					</xsl:choose>
-					<xsl:choose>
-						<xsl:when test="not($is-numeric-type = 'YES') and (not($min-occurs) or ($min-occurs = 1))">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, ') &lt; ', 1, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too few elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($is-numeric-type = 'YES') and not($min-occurs = 0)">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, ') &lt; ', $min-occurs, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too few elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($min-occurs) or ($min-occurs = 1)">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, 'StringRep) &lt; ', 1, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too few elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-						<xsl:when test="not($min-occurs = 0)">
-							<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, 'StringRep) &lt; ', $min-occurs, ' {', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'err = fmt.Errorf(&quot;Too few elements of type ', @type, '\n&quot;)', $NL)"/>
-							<xsl:value-of select="concat($indent, $T, 'return', $NL)"/>
-							<xsl:value-of select="concat($indent, '}', $NL)"/>
-						</xsl:when>
-					</xsl:choose>
+					<xsl:call-template name="output-cardinality-check">
+						<xsl:with-param name="xml-type"        select="@type"/>
+						<xsl:with-param name="is-numeric-type" select="$is-numeric-type"/>
+						<xsl:with-param name="max-occurs"      select="$max-occurs"/>
+						<xsl:with-param name="min-occurs"      select="$min-occurs"/>
+						<xsl:with-param name="go-elem"         select="concat($go-elem, '.', $go-name)"/>
+						<xsl:with-param name="indent"          select="$indent"/>
+					</xsl:call-template>
 					<xsl:choose>
 						<xsl:when test="$go-type = 'string'">
 							<xsl:value-of select="concat($indent, '/* TODO: validation of string ', @type, ' */', $NL)"/>
@@ -409,7 +365,7 @@
 						</xsl:when>
 						<xsl:when test="($is-numeric-type = 'YES') and (($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
 							<xsl:value-of select="concat($indent, '/* Validate single instance of numeric type ', @type, ' */', $NL)"/>
-							<xsl:call-template name="output-integer-conversion">
+							<xsl:call-template name="output-numeric-conversion">
 								<xsl:with-param name="type"      select="@type"/>
 								<xsl:with-param name="go-string" select="concat($go-elem, '.', $go-name, 'StringRep[0]')"/>
 								<xsl:with-param name="go-val"    select="concat($go-elem, '.', $go-name)"/>
@@ -438,7 +394,7 @@
 							</xsl:choose>
 							<xsl:value-of select="concat($indent, $T, $go-elem, '.', $go-name, ' = make([]', $go-type, ', len(', $go-elem, '.', $go-name, 'StringRep))', $NL)"/>
 							<xsl:value-of select="concat($indent, $T, 'for i, s := range ', $go-elem, '.', $go-name, 'StringRep {', $NL)"/>
-							<xsl:call-template name="output-integer-conversion">
+							<xsl:call-template name="output-numeric-conversion">
 								<xsl:with-param name="type"      select="@type"/>
 								<xsl:with-param name="go-string" select="'s'"/>
 								<xsl:with-param name="go-val"    select="concat($go-elem, '.', $go-name, '[i]')"/>
@@ -514,6 +470,14 @@
 			<xsl:value-of select="concat($indent, '} `xml:&quot;', $xmlpath, '&quot;`', $NL)"/>
 		</xsl:when>
 		<xsl:when test="$mode = 'validation'">
+			<xsl:call-template name="output-cardinality-check">
+				<xsl:with-param name="xml-type"        select="'inner complexType'"/>
+				<xsl:with-param name="is-numeric-type" select="''"/>
+				<xsl:with-param name="max-occurs"      select="$max-occurs"/>
+				<xsl:with-param name="min-occurs"      select="$min-occurs"/>
+				<xsl:with-param name="go-elem"         select="concat($go-elem, '.', $name)"/>
+				<xsl:with-param name="indent"          select="$indent"/>
+			</xsl:call-template>
 			<xsl:choose>
 				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
 					<xsl:value-of select="concat($indent, '// ', $go-elem, '.', $name, ': single element', $NL)"/>

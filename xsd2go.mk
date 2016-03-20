@@ -31,7 +31,7 @@ all: $(TARGETS)
 # - how to import the built package (parse PWD and GOPATH?)
 test:
 	go build -o $(TARGET_DIR)/main ./$(TARGET_DIR)/test
-	go test ./$(TARGET_DIR)
+	-go test ./$(TARGET_DIR)
 	( cd ./$(TARGET_DIR) && ./main )
 
 clean:

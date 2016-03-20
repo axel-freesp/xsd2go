@@ -35,7 +35,7 @@ define failrule
 $(1)-check:
 	@error=$$$$($(XSLT) $(X_VAL) $(X_IN) $(2)$(1) $(X_STY) $(STY_DIR)/empty.xsl 2>&1); \
 	test -n "$$$$error" || { \
-		echo "Error in test file $$(@:%-check=%): shoule not match to stylesheet"; \
+		echo "Error in test file $$(@:%-check=%): should not match to stylesheet"; \
 	}
 endef
 $(foreach X, $(XSD_FILES), $(foreach F, $($(X:%=%-to-fail)), $(eval $(call failrule,$F,$(dir $X)))))

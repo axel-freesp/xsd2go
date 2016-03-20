@@ -4,7 +4,8 @@
         <case filename="test5/test5-test1.xml" pass="true"  />
         <case filename="test5/test5-test2.xml" pass="false" cause="Simple element value out of range."/>
         <case filename="test5/test5-test3.xml" pass="false" cause="Too many elements."/>
-        <case filename="test5/test5-test3.xml" pass="false" cause="Invalid integer value."/>
-        <case filename="test5/test5-test3.xml" pass="false" cause="Junk in integer value."/>
+        <case filename="test5/test5-test4.xml" pass="false" cause="Invalid integer value."/>
+        <case filename="test5/test5-test5.xml" pass="false" cause="Junk in integer value."/>
+        <case filename="test5/test5-test6.xml" pass="true"  />
     </part>
 </testcases>

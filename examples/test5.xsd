@@ -9,10 +9,19 @@
             <xsd:maxInclusive value="20"/>
         </xsd:restriction>
     </xsd:simpleType>
+
+    <xsd:simpleType name="Simple2">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="-1"/>
+            <xsd:maxInclusive value="20"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     
     <xsd:complexType name="Test1">
         <xsd:sequence>
             <xsd:element name="value" type="Simple1" maxOccurs="2"/>
+            <xsd:element name="score" type="Simple2" minOccurs="1"/>
+            <xsd:element name="fract" type="xsd:double" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 

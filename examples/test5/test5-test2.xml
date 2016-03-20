@@ -4,4 +4,5 @@
        xsi:schemaLocation="http://www.freesp.de/xml/freeSP/test5 ../test5.xsd">
     <value>4</value>
     <value>41</value>
+    <score>1</score>
 </test1>

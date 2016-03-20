@@ -3,4 +3,5 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.freesp.de/xml/freeSP/test5 ../test5.xsd">
     <value>4x</value>
+    <score>3</score>
 </test1>

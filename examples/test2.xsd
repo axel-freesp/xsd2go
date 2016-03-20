@@ -15,8 +15,8 @@
         <xsd:sequence>
             <xsd:element name="element2" maxOccurs="unbounded">
                 <xsd:complexType>
-                    <xsd:attribute name="arg1" type="xsd:string"/>
-                    <xsd:attribute name="arg2" type="xsd:string"/>
+                    <xsd:attribute name="arg1" type="xsd:string" use="required"/>
+                    <xsd:attribute name="arg2" type="xsd:string" use="optional"/>
                 </xsd:complexType>
             </xsd:element>
             <xsd:element name="element3" type="Element3" minOccurs="0" maxOccurs="1"/>

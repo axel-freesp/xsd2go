@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test1 xmlns="http://www.freesp.de/xml/freeSP/test2"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.freesp.de/xml/freeSP/test2 ../test2.xsd">
+    <element1 test1="17" test2="hoo">
+        <element3 attr="true"/>
+    </element1>
+</test1>

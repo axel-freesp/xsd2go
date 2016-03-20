@@ -3,5 +3,12 @@
     <part type="XmlTest1">
         <case filename="test2/test2-test1.xml" pass="true"/>
         <case filename="test2/test2-test2.xml" pass="true"/>
+        <case filename="test2/test2-test3.xml" pass="false" cause="Missing required attribute"/>
+        <case filename="test2/test2-test4.xml" pass="true"/>
+        <case filename="test2/test2-test5.xml" pass="false" cause="Missing element"/>
+        <case filename="test2/test2-test6.xml" pass="true"/>
+        <!-- Unable to detect sequence order violations -->
+        <!--case filename="test2/test2-test7.xml" pass="false" cause="invalid sequence order"/-->
+        <case filename="test2/test2-test8.xml" pass="false" cause="too many elements"/>
     </part>
 </testcases>

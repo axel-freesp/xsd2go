@@ -308,8 +308,8 @@
 			<xsl:choose>
 				<xsl:when test="$mode = 'definition'">
 					<xsl:variable name="go-type">
-						<xsl:call-template name="make-go-type">
-							<xsl:with-param name="tname" select="@type"/>
+						<xsl:call-template name="go-type">
+							<xsl:with-param name="type" select="@type"/>
 						</xsl:call-template>
 					</xsl:variable>
 					<xsl:variable name="is-numeric-type">
@@ -342,6 +342,11 @@
 					</xsl:variable>
 					<xsl:variable name="is-numeric-type">
 						<xsl:call-template name="is-numeric-type">
+							<xsl:with-param name="type" select="@type"/>
+						</xsl:call-template>
+					</xsl:variable>
+					<xsl:variable name="is-bool-type">
+						<xsl:call-template name="is-boolean-type">
 							<xsl:with-param name="type" select="@type"/>
 						</xsl:call-template>
 					</xsl:variable>
@@ -406,7 +411,7 @@
 							<xsl:value-of select="concat($indent, '/* Validate single instance of numeric type ', @type, ' */', $NL)"/>
 							<xsl:call-template name="output-integer-conversion">
 								<xsl:with-param name="type"      select="@type"/>
-								<xsl:with-param name="go-string" select="concat($go-elem, '.', $go-name, 'StringRep')"/>
+								<xsl:with-param name="go-string" select="concat($go-elem, '.', $go-name, 'StringRep[0]')"/>
 								<xsl:with-param name="go-val"    select="concat($go-elem, '.', $go-name)"/>
 								<xsl:with-param name="indent"    select="$indent"/>
 								<xsl:with-param name="min-value">
@@ -423,7 +428,14 @@
 						</xsl:when>
 						<xsl:when test="$is-numeric-type = 'YES'">
 							<xsl:value-of select="concat($indent, '/* Validate array of numeric type ', @type, ' */', $NL)"/>
-							<xsl:value-of select="concat($indent, '{', $NL)"/>
+							<xsl:choose>
+								<xsl:when test="$min-occurs = '0'">
+									<xsl:value-of select="concat($indent, 'if len(', $go-elem, '.', $go-name, 'StringRep) &gt; 0 {', $NL)"/>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="concat($indent, '{', $NL)"/>
+								</xsl:otherwise>
+							</xsl:choose>
 							<xsl:value-of select="concat($indent, $T, $go-elem, '.', $go-name, ' = make([]', $go-type, ', len(', $go-elem, '.', $go-name, 'StringRep))', $NL)"/>
 							<xsl:value-of select="concat($indent, $T, 'for i, s := range ', $go-elem, '.', $go-name, 'StringRep {', $NL)"/>
 							<xsl:call-template name="output-integer-conversion">
@@ -444,6 +456,12 @@
 							</xsl:call-template>
 							<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
 							<xsl:value-of select="concat($indent, '}', $NL)"/>
+						</xsl:when>
+						<xsl:when test="($is-bool-type = 'YES') and (($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
+							<xsl:value-of select="concat($indent, '/* Validate single instance of boolean type ', @type, ' */', $NL)"/>
+						</xsl:when>
+						<xsl:when test="$is-bool-type = 'YES'">
+							<xsl:value-of select="concat($indent, '/* Validate array of boolean type ', @type, ' */', $NL)"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<xsl:value-of select="concat($indent, '/* Validate array of complex type ', @type, ' */', $NL)"/>

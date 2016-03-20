@@ -133,37 +133,37 @@
 		<xsl:when test="$type = 'xsd:unsignedInt'">
 			<xsl:value-of select="'uint'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:byte'">
+		<xsl:when test="$type = 'xsd:byte'">
 			<xsl:value-of select="'byte'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:int'">
+		<xsl:when test="$type = 'xsd:int'">
 			<xsl:value-of select="'int'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:long'">
+		<xsl:when test="$type = 'xsd:long'">
 			<xsl:value-of select="'int64'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:negativeInteger'">
+		<xsl:when test="$type = 'xsd:negativeInteger'">
 			<xsl:value-of select="'int'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:nonNegativeInteger'">
+		<xsl:when test="$type = 'xsd:nonNegativeInteger'">
 			<xsl:value-of select="'uint'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:nonPositiveInteger'">
+		<xsl:when test="$type = 'xsd:nonPositiveInteger'">
 			<xsl:value-of select="'int'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:positiveInteger'">
+		<xsl:when test="$type = 'xsd:positiveInteger'">
 			<xsl:value-of select="'uint'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:short'">
+		<xsl:when test="$type = 'xsd:short'">
 			<xsl:value-of select="'short'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:unsignedLong'">
+		<xsl:when test="$type = 'xsd:unsignedLong'">
 			<xsl:value-of select="'uint64'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:unsignedShort'">
+		<xsl:when test="$type = 'xsd:unsignedShort'">
 			<xsl:value-of select="'uint'"/>
 		</xsl:when>
-		<xsl:when test="@type = 'xsd:unsignedByte'">
+		<xsl:when test="$type = 'xsd:unsignedByte'">
 			<xsl:value-of select="'ubyte'"/>
 		</xsl:when>
 		<xsl:when test="$type = 'xsd:double'">
@@ -207,6 +207,21 @@
 	</xsl:if>
 </xsl:template>
 
+<xsl:template name="is-float-type">
+	<xsl:param name="type"/>
+	<xsl:if test="($type = 'xsd:double') or
+				  ($type = 'xsd:decimal')">
+		<xsl:value-of select="'YES'"/>
+	</xsl:if>
+</xsl:template>
+
+<xsl:template name="is-bool-type">
+	<xsl:param name="type"/>
+	<xsl:if test="($type = 'xsd:boolean')">
+		<xsl:value-of select="'YES'"/>
+	</xsl:if>
+</xsl:template>
+
 <xsl:template name="is-integer-simpletype">
 	<xsl:param name="type"/>
 	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
@@ -227,6 +242,46 @@
 	</xsl:if>
 </xsl:template>
 
+<xsl:template name="is-float-simpletype">
+	<xsl:param name="type"/>
+	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:if test="$simpletype">
+		<xsl:variable name="yes1">
+			<xsl:call-template name="is-float-type">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:variable name="yes2">
+			<xsl:call-template name="is-float-simpletype">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:if test="($yes1 = 'YES') or ($yes2 = 'YES')">
+			<xsl:value-of select="'YES'"/>
+		</xsl:if>
+	</xsl:if>
+</xsl:template>
+
+<xsl:template name="is-bool-simpletype">
+	<xsl:param name="type"/>
+	<xsl:variable name="simpletype" select="/xsd:schema/xsd:simpleType[(@name = $type) or (@name = substring-after($type, ':'))]"/>
+	<xsl:if test="$simpletype">
+		<xsl:variable name="yes1">
+			<xsl:call-template name="is-bool-type">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:variable name="yes2">
+			<xsl:call-template name="is-bool-simpletype">
+				<xsl:with-param name="type" select="$simpletype/xsd:restriction/@base"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:if test="($yes1 = 'YES') or ($yes2 = 'YES')">
+			<xsl:value-of select="'YES'"/>
+		</xsl:if>
+	</xsl:if>
+</xsl:template>
+
 <xsl:template name="is-numeric-type">
 	<xsl:param name="type"/>
 	<xsl:variable name="yes1">
@@ -236,6 +291,33 @@
 	</xsl:variable>
 	<xsl:variable name="yes2">
 		<xsl:call-template name="is-integer-simpletype">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="yes3">
+		<xsl:call-template name="is-float-type">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="yes4">
+		<xsl:call-template name="is-float-simpletype">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:if test="($yes1 = 'YES') or ($yes2 = 'YES') or ($yes3 = 'YES') or ($yes4 = 'YES')">
+		<xsl:value-of select="'YES'"/>
+	</xsl:if>
+</xsl:template>
+
+<xsl:template name="is-boolean-type">
+	<xsl:param name="type"/>
+	<xsl:variable name="yes1">
+		<xsl:call-template name="is-bool-type">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:variable name="yes2">
+		<xsl:call-template name="is-bool-simpletype">
 			<xsl:with-param name="type" select="$type"/>
 		</xsl:call-template>
 	</xsl:variable>

@@ -41,14 +41,22 @@
 	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Invalid integer data in attribute ', @name, '.\n&quot;)', $NL)"/>
 	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
 	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	<!-- TODO: for float numbers evaluate regexp: -->
 	<xsl:value-of select="concat($indent, $T, 'if ', $go-string, ' != fmt.Sprintf(&quot;%v&quot;,', $go-val, ') {', $NL)"/>
 	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Junk integer data in attribute ', @name, '.\n&quot;)', $NL)"/>
 	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
 	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, 'if ', $go-val, ' &lt; ', $min-value, ' || ', $go-val, ' &gt; ', $max-value, ' {', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Integer data out of range ', @name, '.\n&quot;)', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
-	<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	<xsl:variable name="is-float-type">
+		<xsl:call-template name="is-float-type">
+			<xsl:with-param name="type" select="$type"/>
+		</xsl:call-template>
+	</xsl:variable>
+	<xsl:if test="not($is-float-type = 'YES')">
+		<xsl:value-of select="concat($indent, $T, 'if ', $go-val, ' &lt; ', $min-value, ' || ', $go-val, ' &gt; ', $max-value, ' {', $NL)"/>
+		<xsl:value-of select="concat($indent, $T, $T, 'err = fmt.Errorf(&quot;Integer data out of range ', @name, '.\n&quot;)', $NL)"/>
+		<xsl:value-of select="concat($indent, $T, $T, 'return', $NL)"/>
+		<xsl:value-of select="concat($indent, $T, '}', $NL)"/>
+	</xsl:if>
 	<xsl:value-of select="concat($indent, '}', $NL)"/>
 </xsl:template>
 

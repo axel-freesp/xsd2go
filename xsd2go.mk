@@ -18,7 +18,7 @@ STY := $(wildcard $(STY_DIR)/*.xsl)
 ifneq ($(PACKAGE_NAME),)
 APPLY_PARAM := $(X_PARM) package-name "'$(PACKAGE_NAME)'"
 PACKAGE_PATH := $(subst $(GOPATH)/src/,,$(PWD))/$(TARGET_DIR)
-$(info PACKAGE_PATH = $(PACKAGE_PATH))
+#$(info PACKAGE_PATH = $(PACKAGE_PATH))
 endif
 
 .PHONY: all test clean

@@ -447,14 +447,15 @@
 	<xsl:param name="mode"/>
 	<xsl:choose>
 		<xsl:when test="$mode = 'definition'">
-			<xsl:choose>
+			<xsl:value-of select="concat($indent, $name, ' []struct {', $NL)"/>
+			<!--xsl:choose>
 				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
 					<xsl:value-of select="concat($indent, $name, ' struct {', $NL)"/>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:value-of select="concat($indent, $name, ' []struct {', $NL)"/>
 				</xsl:otherwise>
-			</xsl:choose>
+			</xsl:choose-->
 			<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
 				<xsl:with-param name="xmlpath" select="''"/>
 				<xsl:with-param name="indent" select="concat($indent, $T)"/>
@@ -478,7 +479,22 @@
 				<xsl:with-param name="go-elem"         select="concat($go-elem, '.', $name)"/>
 				<xsl:with-param name="indent"          select="$indent"/>
 			</xsl:call-template>
-			<xsl:choose>
+			<xsl:value-of select="concat($indent, '// ', $go-elem, '.', $name, ': array', $NL)"/>
+			<xsl:value-of select="concat($indent, 'for _, elem := range ', $go-elem, '.', $name, ' {', $NL)"/>
+				<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
+					<xsl:with-param name="go-elem" select="'elem'"/>
+					<xsl:with-param name="indent"  select="concat($indent, $T)"/>
+					<xsl:with-param name="mode"    select="$mode"/>
+				</xsl:apply-templates>
+				<xsl:apply-templates select="xsd:sequence|xsd:choice|xsd:simpleContent">
+					<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
+					<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
+					<xsl:with-param name="go-elem" select="'elem'"/>
+					<xsl:with-param name="indent"  select="concat($indent, $T)"/>
+					<xsl:with-param name="mode"    select="$mode"/>
+				</xsl:apply-templates>
+			<xsl:value-of select="concat($indent, '}', $NL)"/>
+			<!--xsl:choose>
 				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
 					<xsl:value-of select="concat($indent, '// ', $go-elem, '.', $name, ': single element', $NL)"/>
 					<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
@@ -511,7 +527,7 @@
 						</xsl:apply-templates>
 					<xsl:value-of select="concat($indent, '}', $NL)"/>
 				</xsl:otherwise>
-			</xsl:choose>
+			</xsl:choose-->
 		</xsl:when>
 	</xsl:choose>
 </xsl:template>

@@ -60,7 +60,94 @@ TODO: detailed description of the processing steps: which stylesheet
 produces what and why? Test execution.
 
 ## Features
-TODO: describe the already existing features and what needs to be done.
+### Some Limitations
+Compared to a full-blown validating XML parser, there are some drawbacks
+resulting from the taken approach, that limit
+the amount of checks that can actually be performed. For example, the
+following input files cannot be distinguished, althought a schema could
+tell we should accept one, but reject the other:
+
+Example 1:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toplevel>
+    <element1>Content 1</element1>
+    <element2>Content 2</element2>
+</toplevel>
+```
+
+Example 2:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toplevel>
+    <element2>Content 2</element2>
+    <element1>Content 1</element1>
+</toplevel>
+```
+
+In general, the sequence order of elements cannot be checked, althought
+it can be expressed in an XML schema. As of now, there is no strategy to
+overcome this drawback. If the sequence order really matters, a
+full-blown validating parser is needed.
+
+Another drawback can be encountered: It is invalid XML to write an
+attribute twice, like in the following example.
+
+Example 3 - invalid XML (duplicated attribute):
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toplevel>
+    <element1 attr="foo" attr="bar"/>
+</toplevel>
+```
+
+Such malformed XML files are accepted by the generated parsers, and all
+but one duplicate values are silently discarded. In contrast to the
+sequence order weakness, this issue could be fixed in the native Go XML
+parser, because it simply is invalid XML.
+
+### Available Features
+#### We can parse
+- document structure (with the limitation of the sequence order)
+  - sequence
+  - choice
+  - group
+  - attributeGroup
+  - attribute
+- inheritance
+  - simpleType - restriction
+  - complexType - extension
+- element cardinality (minOccurs, maxOccurs)
+- attribute presence (use="optional", use="required")
+- attribute default values
+- attribute fixed values
+- numeric values (in elements and attributes):
+  - number format range (e.g. -128 <= signed char <= 127)
+  - explicit range (m[ax|in][In|Ex]clusive)
+- enumeration (only as a restriction of xsd:string)
+
+#### We can create a parser from the AUTOSAR XML schema files!
+The official schema files can be downloaded from the AUTOSAR server,
+for example, I was playing with these files:
+- [AUTOSAR-3.1 schema] (http://www.autosar.org/fileadmin/files/releases/3-1/methodology-templates/templates/standard/AUTOSAR_Schema.zip)
+- [AUTOSAR-4.2 schema] (http://www.autosar.org/fileadmin/files/releases/4-2/methodology-and-templates/templates/standard/AUTOSAR_MMOD_XMLSchema.zip)
+
+These schema files are really *big*. Here are some numbers about lines
+of code of the schema files and the lines of code of the generated Go
+parser:
+- AUTOSAR.xsd - 20633 loc, AUTOSAR.go - 67584 loc
+- AUTOSAR_4-2-2.xsd - 77357 loc, AUTOSAR_4-2-2.go - 191620 loc
+
+#### Next to Do
+Some things have been left to do (and I will take care when time permits):
+- missing features
+  - regex parsing
+  - namespace (until now, we are namespace agnostic)
+  - references
+  - handling of complex scenarios
+- re-structuring of the XSLT stylesheets, to make them better readable ;)
+
+If you want to contribute, please create a JIRA issue.
 
 Have fun!
 

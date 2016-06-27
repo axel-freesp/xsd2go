@@ -8,6 +8,7 @@
 
 <xsl:param name="package-name" select="'main'"/>
 <xsl:param name="source-file"/>
+<xsl:param name="suppress-validation" select="'false'"/>
 
 <xsl:include href="xsd2go-helpers.xsl"/>
 <xsl:include href="xsd-attribute2go.xsl"/>
@@ -50,11 +51,13 @@
 		<xsl:with-param name="go-name" select="$go-name"/>
 		<xsl:with-param name="mode"    select="'definition'"/>
 	</xsl:apply-templates>
-	<xsl:apply-templates select="." mode="output">
-		<xsl:with-param name="tname"   select="$tname"/>
-		<xsl:with-param name="go-name" select="$go-name"/>
-		<xsl:with-param name="mode"    select="'validation'"/>
-	</xsl:apply-templates>
+	<xsl:if test="not($suppress-validation = 'true')">
+		<xsl:apply-templates select="." mode="output">
+			<xsl:with-param name="tname"   select="$tname"/>
+			<xsl:with-param name="go-name" select="$go-name"/>
+			<xsl:with-param name="mode"    select="'validation'"/>
+		</xsl:apply-templates>
+	</xsl:if>
 </xsl:template>
 
 <xsl:template match="xsd:complexType" mode="output">
@@ -76,7 +79,7 @@
 				</xsl:choose>
 			</xsl:if>
 		</xsl:when>
-		<xsl:when test="$mode = 'validation'">
+		<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 			<xsl:value-of select="concat('func (g *Xml', $go-name, ') Validate() (err error) {', $NL)"/>
 		</xsl:when>
 	</xsl:choose>
@@ -92,7 +95,7 @@
 		<xsl:with-param name="indent"  select="$T"/>
 		<xsl:with-param name="mode"    select="$mode"/>
 	</xsl:apply-templates>
-	<xsl:if test="$mode = 'validation'">
+	<xsl:if test="($mode = 'validation') and not($suppress-validation = 'true')">
 		<xsl:value-of select="concat($T, 'return', $NL)"/>
 	</xsl:if>
 	<xsl:value-of select="concat('}', $NL, $NL)"/>
@@ -161,7 +164,7 @@
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:when>
-		<xsl:when test="$mode = 'validation'">
+		<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 			<xsl:choose>
 				<xsl:when test="$basetype = 'string'">
 					<xsl:value-of select="concat($indent, '// Nothing to validate for ', $go-elem, '.CharData', $NL)"/>
@@ -334,7 +337,7 @@
 						</xsl:otherwise>
 					</xsl:choose>
 				</xsl:when>
-				<xsl:when test="$mode = 'validation'">
+				<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 					<xsl:variable name="go-type">
 						<xsl:call-template name="make-go-type">
 							<xsl:with-param name="tname" select="@type"/>
@@ -448,14 +451,6 @@
 	<xsl:choose>
 		<xsl:when test="$mode = 'definition'">
 			<xsl:value-of select="concat($indent, $name, ' []struct {', $NL)"/>
-			<!--xsl:choose>
-				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
-					<xsl:value-of select="concat($indent, $name, ' struct {', $NL)"/>
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="concat($indent, $name, ' []struct {', $NL)"/>
-				</xsl:otherwise>
-			</xsl:choose-->
 			<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
 				<xsl:with-param name="xmlpath" select="''"/>
 				<xsl:with-param name="indent" select="concat($indent, $T)"/>
@@ -470,7 +465,7 @@
 			</xsl:apply-templates>
 			<xsl:value-of select="concat($indent, '} `xml:&quot;', $xmlpath, '&quot;`', $NL)"/>
 		</xsl:when>
-		<xsl:when test="$mode = 'validation'">
+		<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 			<xsl:call-template name="output-cardinality-check">
 				<xsl:with-param name="xml-type"        select="'inner complexType'"/>
 				<xsl:with-param name="is-numeric-type" select="''"/>
@@ -494,40 +489,6 @@
 					<xsl:with-param name="mode"    select="$mode"/>
 				</xsl:apply-templates>
 			<xsl:value-of select="concat($indent, '}', $NL)"/>
-			<!--xsl:choose>
-				<xsl:when test="(($min-occurs = '1') or not($min-occurs)) and (($max-occurs = '1') or not($max-occurs))">
-					<xsl:value-of select="concat($indent, '// ', $go-elem, '.', $name, ': single element', $NL)"/>
-					<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
-						<xsl:with-param name="go-elem" select="concat($go-elem, '.', $name)"/>
-						<xsl:with-param name="indent"  select="concat($indent, $T)"/>
-						<xsl:with-param name="mode"    select="$mode"/>
-					</xsl:apply-templates>
-					<xsl:apply-templates select="xsd:sequence|xsd:choice|xsd:simpleContent">
-						<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
-						<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
-						<xsl:with-param name="go-elem" select="concat($go-elem, '.', $name)"/>
-						<xsl:with-param name="indent"  select="concat($indent, $T)"/>
-						<xsl:with-param name="mode"    select="$mode"/>
-					</xsl:apply-templates>
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="concat($indent, '// ', $go-elem, '.', $name, ': array', $NL)"/>
-					<xsl:value-of select="concat($indent, 'for _, elem := range ', $go-elem, '.', $name, ' {', $NL)"/>
-						<xsl:apply-templates select="xsd:attribute|xsd:attributeGroup">
-							<xsl:with-param name="go-elem" select="'elem'"/>
-							<xsl:with-param name="indent"  select="concat($indent, $T)"/>
-							<xsl:with-param name="mode"    select="$mode"/>
-						</xsl:apply-templates>
-						<xsl:apply-templates select="xsd:sequence|xsd:choice|xsd:simpleContent">
-							<xsl:with-param name="parent-min-occurs" select="$min-occurs"/>
-							<xsl:with-param name="parent-max-occurs" select="$max-occurs"/>
-							<xsl:with-param name="go-elem" select="'elem'"/>
-							<xsl:with-param name="indent"  select="concat($indent, $T)"/>
-							<xsl:with-param name="mode"    select="$mode"/>
-						</xsl:apply-templates>
-					<xsl:value-of select="concat($indent, '}', $NL)"/>
-				</xsl:otherwise>
-			</xsl:choose-->
 		</xsl:when>
 	</xsl:choose>
 </xsl:template>

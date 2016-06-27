@@ -22,7 +22,7 @@
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:when>
-		<xsl:when test="$mode = 'validation'">
+		<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 			<!-- TODO -->
 		</xsl:when>
 	</xsl:choose>
@@ -104,7 +104,7 @@
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:when>
-		<xsl:when test="$mode = 'validation'">
+		<xsl:when test="($mode = 'validation') and not($suppress-validation = 'true')">
 			<xsl:variable name="go-attr"        select="concat($go-elem, '.', $attr-name)"/>
 			<xsl:variable name="go-attr-string" select="concat($go-attr, 'StringRep')"/>
 			<xsl:variable name="type" select="@type"/>

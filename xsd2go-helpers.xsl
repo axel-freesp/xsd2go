@@ -403,7 +403,8 @@
 		<xsl:when test="$type = 'xsd:short'">
 			<xsl:value-of select="32767"/>
 		</xsl:when>
-		<xsl:when test="$type = 'xsd:unsignedInt'">
+		<xsl:when test="($type = 'xsd:unsignedInt') or
+		                ($type = 'xsd:positiveInteger')">
 			<xsl:value-of select="4294967295"/>
 		</xsl:when>
 		<xsl:when test="$type = 'xsd:unsignedShort'">

@@ -1,22 +1,25 @@
 #
 
-EXAMPLES := $(filter-out examples/xml.xsd, $(wildcard examples/*.xsd))
+EXAMPLES := $(filter-out examples/xml.xsd $(wildcard examples/*.xsd))
 .PHONY: test all clean check
 test: $(EXAMPLES:%=%-test)
 all: $(EXAMPLES:%=%-all)
+no-verify: $(EXAMPLES:%=%-no-verify)
 clean: $(EXAMPLES:%=%-clean)
 check: $(EXAMPLES:%=%-check)
 ########################################################################
 
 define gocreate-rule
 $(1)_PARAMS := XSD_FILES=$(2) TARGET_DIR=test/$(1) PACKAGE_NAME=$$(subst -,_,$(1))
-#$$(info PACKAGE_NAME=$$(subst -,_,$(1)))
 .PHONY: $(2)-test
 $(2)-test: $(2)-all
 	@make -s -f xsd2go.mk $$($(1)_PARAMS) test
 .PHONY: $(2)-all
 $(2)-all:
 	@make -s -f xsd2go.mk $$($(1)_PARAMS) all
+.PHONY: $(2)-no-verify
+$(2)-no-verify:
+	@make -s -f xsd2go.mk $$($(1)_PARAMS) all NO_VALIDATION=1
 .PHONY: $(2)-clean
 $(2)-clean:
 	@make -s -f xsd2go.mk $$($(1)_PARAMS) clean

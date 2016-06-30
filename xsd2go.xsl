@@ -30,7 +30,9 @@
 	<xsl:value-of select="concat('const xmlHeader = `&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;', $NL, '`', $NL)"/>
 	<xsl:apply-templates select="xsd:complexType"/>
 	<xsl:apply-templates select="xsd:simpleType"/>
-	<xsl:apply-templates select="xsd:element" mode="toplevel"/>
+	<xsl:if test="not($suppress-validation = 'true')">
+		<xsl:apply-templates select="xsd:element" mode="toplevel"/>
+	</xsl:if>
 </xsl:template>
 
 <!-- global complexType -->
@@ -498,33 +500,35 @@
 <!-- simpleType -->
 
 <xsl:template match="xsd:simpleType">
-	<xsl:variable name="go-type">
-		<xsl:call-template name="make-go-name">
-			<xsl:with-param name="name" select="@name"/>
-		</xsl:call-template>
-	</xsl:variable>
-	<xsl:choose>
-		<xsl:when test="xsd:restriction/xsd:enumeration">
-			<xsl:value-of select="concat('func ValidateXml', $go-type, '(val string) (err error) {', $NL)"/>
-			<xsl:value-of select="concat($T, 'enums := []string{', $NL)"/>
-			<xsl:for-each select="xsd:restriction/xsd:enumeration">
-				<xsl:value-of select="concat($T, $T, '&quot;', @value, '&quot;,', $NL)"/>
-			</xsl:for-each>
-			<xsl:value-of select="concat($T, '}', $NL)"/>
-			<xsl:value-of select="concat($T, 'match := false', $NL)"/>
-			<xsl:value-of select="concat($T, 'for _, v := range enums {', $NL)"/>
-			<xsl:value-of select="concat($T, $T, 'if v == val {', $NL)"/>
-			<xsl:value-of select="concat($T, $T, $T, 'match = true', $NL)"/>
-			<xsl:value-of select="concat($T, $T, $T, 'break', $NL)"/>
-			<xsl:value-of select="concat($T, $T, '}', $NL)"/>
-			<xsl:value-of select="concat($T, '}', $NL)"/>
-			<xsl:value-of select="concat($T, 'if !match {', $NL)"/>
-			<xsl:value-of select="concat($T, $T, 'err = fmt.Errorf(&quot;Validation failed: %s is no valid enumeration value for XML type ', @name, '\n&quot;, val)', $NL)"/>
-			<xsl:value-of select="concat($T, '}', $NL)"/>
-			<xsl:value-of select="concat($T, 'return', $NL)"/>
-			<xsl:value-of select="concat('}', $NL, $NL)"/>
-		</xsl:when>
-	</xsl:choose>
+	<xsl:if test="not($suppress-validation = 'true')">
+		<xsl:variable name="go-type">
+			<xsl:call-template name="make-go-name">
+				<xsl:with-param name="name" select="@name"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:choose>
+			<xsl:when test="xsd:restriction/xsd:enumeration">
+				<xsl:value-of select="concat('func ValidateXml', $go-type, '(val string) (err error) {', $NL)"/>
+				<xsl:value-of select="concat($T, 'enums := []string{', $NL)"/>
+				<xsl:for-each select="xsd:restriction/xsd:enumeration">
+					<xsl:value-of select="concat($T, $T, '&quot;', @value, '&quot;,', $NL)"/>
+				</xsl:for-each>
+				<xsl:value-of select="concat($T, '}', $NL)"/>
+				<xsl:value-of select="concat($T, 'match := false', $NL)"/>
+				<xsl:value-of select="concat($T, 'for _, v := range enums {', $NL)"/>
+				<xsl:value-of select="concat($T, $T, 'if v == val {', $NL)"/>
+				<xsl:value-of select="concat($T, $T, $T, 'match = true', $NL)"/>
+				<xsl:value-of select="concat($T, $T, $T, 'break', $NL)"/>
+				<xsl:value-of select="concat($T, $T, '}', $NL)"/>
+				<xsl:value-of select="concat($T, '}', $NL)"/>
+				<xsl:value-of select="concat($T, 'if !match {', $NL)"/>
+				<xsl:value-of select="concat($T, $T, 'err = fmt.Errorf(&quot;Validation failed: %s is no valid enumeration value for XML type ', @name, '\n&quot;, val)', $NL)"/>
+				<xsl:value-of select="concat($T, '}', $NL)"/>
+				<xsl:value-of select="concat($T, 'return', $NL)"/>
+				<xsl:value-of select="concat('}', $NL, $NL)"/>
+			</xsl:when>
+		</xsl:choose>
+	</xsl:if>
 </xsl:template>
 
 <!--##########################################################-->

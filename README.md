@@ -55,10 +55,6 @@ examples folder, add a respective -test.xml (which may have an empty
 list) and execute `make`. The results go to a newly created folder
 `test` and get compiled against two generated test programs.
 
-## Toolchain
-TODO: detailed description of the processing steps: which stylesheet
-produces what and why? Test execution.
-
 ## Features
 ### Some Limitations
 Compared to a full-blown validating XML parser, there are some drawbacks
@@ -138,16 +134,30 @@ parser:
 - AUTOSAR.xsd - 20633 loc, AUTOSAR.go - 67584 loc
 - AUTOSAR_4-2-2.xsd - 77357 loc, AUTOSAR_4-2-2.go - 191620 loc
 
+We can generate Go structure files without any validation code by calling
+
+```
+$ make no-verify
+```
+
+This is useful, if you want to have a quick parser for a given schema, without any verification.
+
 #### Next to Do
 Some things have been left to do (and I will take care when time permits):
 - missing features
-  - regex parsing
+  - regex parsing and validating
+  - validation of floating point numbers
+  - validation of special types (dateTime and friends)
   - namespace (until now, we are namespace agnostic)
   - references
   - handling of complex scenarios
 - re-structuring of the XSLT stylesheets, to make them better readable ;)
 
 If you want to contribute, please create a JIRA issue.
+
+## Toolchain
+TODO: detailed description of the processing steps: which stylesheet
+produces what and why? Test execution.
 
 Have fun!
 

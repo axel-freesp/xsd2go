@@ -95,7 +95,7 @@
 	<xsl:choose>
 		<xsl:when test="$mode = 'definition'">
 			<xsl:choose>
-				<xsl:when test="$attr-type = 'string'">
+				<xsl:when test="($attr-type = 'string') or ($suppress-validation = 'true')">
 					<xsl:value-of select="concat($indent, $attr-name, ' ', $attr-type, ' `xml:&quot;', @name, ',attr&quot;`', $NL)"/>
 				</xsl:when>
 				<xsl:otherwise>

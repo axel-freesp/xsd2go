@@ -10,15 +10,22 @@ include Makefile-XSLT
 
 PWD := $(shell pwd)
 SRC_NODIR := $(notdir $(XSD_FILES))
-TARGETS := $(SRC_NODIR:%.xsd=$(TARGET_DIR)/%.go) $(SRC_NODIR:%.xsd=$(TARGET_DIR)/%_test.go) $(SRC_NODIR:%.xsd=$(TARGET_DIR)/test/%_main.go)
 
 STY_DIR := .
 STY := $(wildcard $(STY_DIR)/*.xsl)
 
 ifneq ($(PACKAGE_NAME),)
-APPLY_PARAM := $(X_PARM) package-name "'$(PACKAGE_NAME)'"
+APPLY_PARAM += $(X_PARM) package-name "'$(PACKAGE_NAME)'"
 PACKAGE_PATH := $(subst $(GOPATH)/src/,,$(PWD))/$(TARGET_DIR)
 #$(info PACKAGE_PATH = $(PACKAGE_PATH))
+endif
+
+# Comes from Makefile:
+ifneq ($(NO_VALIDATION),)
+  APPLY_PARAM += $(X_PARM) suppress-validation "'true'"
+  TARGETS := $(SRC_NODIR:%.xsd=$(TARGET_DIR)/%.go)
+else
+  TARGETS := $(SRC_NODIR:%.xsd=$(TARGET_DIR)/%.go) $(SRC_NODIR:%.xsd=$(TARGET_DIR)/%_test.go) $(SRC_NODIR:%.xsd=$(TARGET_DIR)/test/%_main.go)
 endif
 
 .PHONY: all test clean

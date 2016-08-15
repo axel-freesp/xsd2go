@@ -3,7 +3,6 @@
 				xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 				xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-<xsl:output method="text"/>
 <xsl:strip-space elements="*"/>
 
 <xsl:param name="force-camelcase" select="'true'"/>
@@ -28,7 +27,19 @@
 	<xsl:choose>
 		<xsl:when test="/xsd:schema/xsd:complexType[@name = $typename]">
 			<xsl:call-template name="make-go-name">
-				<xsl:with-param name="name" select="concat('xml-', $typename)"/>
+				<xsl:with-param name="name">
+					<xsl:choose>
+						<xsl:when test="not($suppress-validation = 'true')">
+							<xsl:value-of select="concat('xml-', $typename)"/>
+						</xsl:when>
+						<xsl:when test="substring($typename, 1 + string-length($typename) - 4, 4) = 'Type'">
+							<xsl:value-of select="substring($typename, 1, string-length($typename) - 4)"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<xsl:value-of select="$typename"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:with-param>
 			</xsl:call-template>
 		</xsl:when>
 		<xsl:when test="/xsd:schema/xsd:simpleType[@name = $typename]">
@@ -55,6 +66,10 @@
 			<xsl:value-of select="concat('undefined(', $tname, ')')"/>
 		</xsl:otherwise>
 	</xsl:choose>
+</xsl:template>
+
+<xsl:template name="make-go-type-name">
+	<xsl:param name="typename"/>
 </xsl:template>
 
 <xsl:template name="make-go-name">
